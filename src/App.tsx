@@ -4,7 +4,6 @@ import {
   Check,
   CloudDownload,
   CloudUpload,
-  Flame,
   FolderOpen,
   History,
   Loader2,
@@ -372,9 +371,7 @@ export default function App() {
     <div className="flex h-full flex-col overflow-hidden">
       <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-slate-800 bg-slate-900 px-3 text-white sm:px-4">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-500 shadow-sm">
-            <Flame className="h-4 w-4 text-white" strokeWidth={2.5} />
-          </span>
+          <img src={`${import.meta.env.BASE_URL}omni-logo.png`} alt="OMNI Technologies logo" width={40} height={40} className="h-10 w-10 shrink-0 rounded-lg bg-white object-contain shadow-sm" />
           <div className="min-w-0 leading-tight">
             <div className="flex items-center gap-2">
               <span className="text-[14px] font-bold tracking-[0.08em]">OMNI</span>
@@ -551,9 +548,7 @@ export default function App() {
             ) : (
               <div className="flex h-full items-center justify-center p-6">
                 <div className="max-w-md text-center">
-                  <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-slate-200 bg-white text-brand-600 shadow-card dark:border-slate-800 dark:bg-slate-900 dark:text-brand-400">
-                    <FolderOpen className="h-6 w-6" />
-                  </span>
+                  <img src={`${import.meta.env.BASE_URL}omni-logo.png`} alt="OMNI Technologies logo" width={72} height={72} className="mx-auto h-[72px] w-[72px] rounded-2xl border border-slate-200 bg-white object-contain shadow-card" />
                   <h1 className="mt-4 text-lg font-semibold text-slate-900 dark:text-slate-100">
                     {renewals.length === 0 ? 'Prepare your next renewal' : 'Select a renewal'}
                   </h1>

@@ -2,6 +2,20 @@
 
 ## Current operating handoff — 2026-10-20
 
+### OMNI logo — 2026-10-20 (local complete, awaiting push confirmation)
+
+- User requested Downloads/omni.png throughout the website. Copied unchanged to
+  public/omni-logo.png; header and welcome screen use it, replacing generic icons.
+  index.html uses the same image for favicon and apple-touch-icon; removed old
+  flame favicon.svg. Vite BASE_URL keeps local and Pages paths correct.
+- Typecheck/lint/178 tests/Pages build passed; existing bundle warning remains.
+  scripts/pages_check.mjs now verifies both logos and favicon; checks passed at
+  local5173 and production-preview4173/repository-path with no page/request errors.
+  First browser assertion raced initial DB loading; corrected the check to wait
+  for welcome logo and image decode, then reran both targets successfully.
+- Next: required ask-once confirmation to commit/push, then verify Pages deploy
+  and run pages_check.mjs with hosted PAGES_URL. No business or browser-data changes.
+
 ### GitHub Pages repair — 2026-10-20 (deployed and verified)
 
 - Live Pages was configured as legacy main/root and served uncompiled index.html
