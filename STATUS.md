@@ -2,7 +2,7 @@
 
 ## Current operating handoff — 2026-10-20
 
-### OMNI logo — 2026-10-20 (local complete, awaiting push confirmation)
+### OMNI logo — 2026-10-20 (deployed and verified)
 
 - User requested Downloads/omni.png throughout the website. Copied unchanged to
   public/omni-logo.png; header and welcome screen use it, replacing generic icons.
@@ -13,8 +13,10 @@
   local5173 and production-preview4173/repository-path with no page/request errors.
   First browser assertion raced initial DB loading; corrected the check to wait
   for welcome logo and image decode, then reran both targets successfully.
-- Next: required ask-once confirmation to commit/push, then verify Pages deploy
-  and run pages_check.mjs with hosted PAGES_URL. No business or browser-data changes.
+- User approved commit/push. Commit de20a8e deployed successfully in Pages run
+  39507622370. Hosted pages_check.mjs passed logos/favicon, renewal creation,
+  linked price/hours and reload with zero page/request errors. No remaining work.
+  No business or browser-data changes.
 
 ### GitHub Pages repair — 2026-10-20 (deployed and verified)
 
