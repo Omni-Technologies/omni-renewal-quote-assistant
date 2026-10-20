@@ -22,6 +22,14 @@ provided separately on a new checkout; they are intentionally absent from GitHub
 
 ## Start it (Windows)
 
+Hosted app: https://omni-technologies.github.io/omni-renewal-quote-assistant/
+
+GitHub Pages must use **GitHub Actions** as its deployment source. The Pages
+workflow builds the app with `npm run build -- --mode pages` and publishes only
+`dist`, with assets under `/omni-renewal-quote-assistant/`.
+Data remains in each browser's IndexedDB; it does not sync between computers.
+Use Export/Restore to transfer renewals and import timesheets separately at work.
+
 ```powershell
 cd E:\Projects\omni-renewal-quote-assistant
 npm install

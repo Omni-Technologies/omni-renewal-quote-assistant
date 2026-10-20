@@ -12,8 +12,11 @@ make targeted changes rather than rebuilding it.
   Node dependencies and build artifacts belong on E:. Use `npm.cmd` on Windows.
 - Source control: private Omni-Technologies/omni-renewal-quote-assistant on GitHub,
   requested by the user on2026-10-20. Keep customer exports, backups and browser
-  artifacts out of Git. No cloud deployment; do not deploy, switch origins/ports,
-  or reinstall dependencies unnecessarily. Ask once before commit/push/merge.
+  artifacts out of Git. User enabled GitHub Pages and requested its repair.
+  Hosted URL: https://omni-technologies.github.io/omni-renewal-quote-assistant/.
+  Pages workflow publishes dist with Vite mode pages; local mode stays unchanged.
+  Do not switch local origins/ports or reinstall dependencies unnecessarily.
+  Ask once before commit/push/merge.
 - Renewals and timesheet history live in the user's browser IndexedDB database
   `omni-renewal-quote`. Another browser profile, localhost, or another port has
   different data. Never clear it or test destructively in the user's profile.

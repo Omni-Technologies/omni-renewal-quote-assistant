@@ -1,8 +1,8 @@
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-// Local-only internal tool: bind to loopback and never expose the port.
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  base: mode === 'pages' ? '/omni-renewal-quote-assistant/' : '/',
   plugins: [react()],
   server: {
     host: '127.0.0.1',
@@ -14,4 +14,4 @@ export default defineConfig({
     port: 4173,
     strictPort: true,
   },
-});
+}));

@@ -2,6 +2,26 @@
 
 ## Current operating handoff — 2026-10-20
 
+### GitHub Pages repair — 2026-10-20 (prepared, awaiting push confirmation)
+
+- Live Pages was configured as legacy main/root and served uncompiled index.html
+  with /src/main.tsx, causing the blank app. Prepared Actions workflow builds
+  and uploads only dist. Vite mode pages uses /omni-renewal-quote-assistant/;
+  default local dev/build URLs remain unchanged. No business/data logic changes.
+- Changed vite.config.ts, added .github/workflows/pages.yml and
+  scripts/pages_check.mjs; updated README and AGENTS for hosted usage.
+- Typecheck/lint/178 tests/Pages production build passed. Existing chunk-size
+  warning remains. Isolated browser at127.0.0.1:4173/repository-path loads all
+  assets without request/page errors; creates renewal, links13h to1290, reload
+  retains data. git diff --check passed.
+- Next after ask-once approval: set Pages build_type=workflow with gh api,
+  commit/push main, monitor deployment and run pages_check.mjs with PAGES_URL
+  set to https://omni-technologies.github.io/omni-renewal-quote-assistant/.
+  Do not upload customer fixtures; workflow runs typecheck/lint/build, because
+  full tests require confidential files that intentionally remain local.
+- Hosted data stays in that browser/origin and does not sync across PCs.
+  Existing export/restore moves renewals; import timesheets separately.
+
 ### GitHub source publication — 2026-10-20
 
 - User requested and explicitly approved initial commit/push to the private
