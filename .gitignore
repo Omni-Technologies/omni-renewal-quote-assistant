@@ -1,0 +1,38 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+audit/browser-profile-*
+audit/verified-backup.json
+*.local
+
+# Confidential local data and browser verification output
+*.csv
+*.xlsx
+*.xls
+*.tsbuildinfo
+audit/
+artifacts/
+/audit-*.json
+/audit-*.png
+.env
+.env.*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
