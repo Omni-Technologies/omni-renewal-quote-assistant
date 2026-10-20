@@ -2,7 +2,7 @@
 
 ## Current operating handoff — 2026-10-20
 
-### GitHub Pages repair — 2026-10-20 (prepared, awaiting push confirmation)
+### GitHub Pages repair — 2026-10-20 (deployed and verified)
 
 - Live Pages was configured as legacy main/root and served uncompiled index.html
   with /src/main.tsx, causing the blank app. Prepared Actions workflow builds
@@ -14,9 +14,12 @@
   warning remains. Isolated browser at127.0.0.1:4173/repository-path loads all
   assets without request/page errors; creates renewal, links13h to1290, reload
   retains data. git diff --check passed.
-- Next after ask-once approval: set Pages build_type=workflow with gh api,
-  commit/push main, monitor deployment and run pages_check.mjs with PAGES_URL
-  set to https://omni-technologies.github.io/omni-renewal-quote-assistant/.
+- User approved publication. Fix commit6c9a593 pushed to main; Pages now uses
+  build_type=workflow. Deployment run39504455256 succeeded, including hosted
+  typecheck/lint/build. Live isolated pages_check.mjs passed with PAGES_URL
+  set to https://omni-technologies.github.io/omni-renewal-quote-assistant/:
+  no page/request errors, renewal creation,13h=1290 and saved reload verified.
+  No remaining repair work. Future main pushes rebuild/deploy automatically.
   Do not upload customer fixtures; workflow runs typecheck/lint/build, because
   full tests require confidential files that intentionally remain local.
 - Hosted data stays in that browser/origin and does not sync across PCs.
