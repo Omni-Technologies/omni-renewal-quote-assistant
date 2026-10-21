@@ -2,7 +2,7 @@
 
 ## Current operating handoff — 2026-10-20
 
-### Focused visual polish — 2026-10-20 (publication approved)
+### Focused visual polish — 2026-10-20 (deployed and verified)
 
 - User requested a walkthrough and polish of the OMNI quote helper while
   preserving its established design. Acceptance: retain the three-column layout,
@@ -25,16 +25,19 @@
   column containment, collapse/keyboard, dark mode, pricing and reload; workflow
   checks cover confidential local history, copy/fallback, dates and mileage.
 - Reviewed desktop light/dark and mobile screenshots under artifacts/layout;
-  git diff --check passed. No user-profile data touched. No commit/push yet.
+  git diff --check passed. No user-profile data touched.
 - Production scripts/pages_check.mjs passed at4173/repository-path with no
   page/request errors, including logos/favicon, linked pricing and saved reload.
   Initial attempt exited1 at pages_check.mjs:17 (welcome-logo timeout): preview
   used default mode against a Pages build. Restarting with
   `npm.cmd run preview -- --mode pages --host 127.0.0.1` fixed asset serving;
   unchanged smoke check reran exit0. No application change was needed.
-- User approved committing/pushing these improvements on2026-10-20. Next:
-  push to main, watch the automatic Pages deployment and run hosted
-  scripts/pages_check.mjs. Record the deployment result here.
+- User approved commit/push on2026-10-20. Polish commit f8f3957 pushed to main;
+  Pages deployment39521355420 succeeded, including hosted typecheck/lint/build.
+  Hosted scripts/pages_check.mjs passed with PAGES_URL set to
+  https://omni-technologies.github.io/omni-renewal-quote-assistant/: compiled
+  assets, logos/favicon, renewal creation,13h=1290 and saved reload verified;
+  zero page/request errors. No remaining polish or publication work.
 
 ### OMNI logo — 2026-10-20 (deployed and verified)
 
