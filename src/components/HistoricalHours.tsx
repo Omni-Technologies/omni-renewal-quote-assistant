@@ -51,6 +51,9 @@ import {
   saveDtoolsDecision,
 } from '../lib/db';
 import { formatDateTime, formatHours } from '../lib/format';
+import { invalidateHistoryContext, useHistoryContext } from '../lib/historyContextStore';
+import { jobCostForSite } from '../lib/jobCost';
+import { JobCostImportPanel, JobCostTable } from './JobCostHistory';
 import {
   Banner,
   ConfirmDialog,
@@ -238,6 +241,7 @@ export function HistoricalHours({
         return;
       }
       await replaceDtoolsHistory(parsed.dataset, parsed.rows);
+      invalidateHistoryContext();
       setDataset(parsed.dataset);
       setRows(parsed.rows);
       setWarnings([
@@ -304,6 +308,7 @@ export function HistoricalHours({
     try {
       await saveDtoolsDecision(next);
       savedDecisions.current.set(key, next);
+      invalidateHistoryContext();
       setDecisions((current) => [
         ...current.filter((decision) => decision.key !== key),
         next,
@@ -331,6 +336,7 @@ export function HistoricalHours({
     try {
       await resetDtoolsDecision(key);
       savedDecisions.current.delete(key);
+      invalidateHistoryContext();
       setDecisions((current) => current.filter((decision) => decision.key !== key));
       notify('Project reset to automatic classification.');
     } catch (error) {
@@ -461,6 +467,8 @@ export function HistoricalHours({
             }}
           />
         </div>
+
+        {!inlineSearch ? <JobCostImportPanel notify={notify} /> : null}
 
         {!dataset ? (
           <ImportArea
@@ -917,6 +925,11 @@ function SiteDetail({
     (project) =>
       project.classification === 'excluded' && !mainKeys.has(project.key),
   );
+  const history = useHistoryContext();
+  const jobCost = useMemo(
+    () => jobCostForSite(history.jobCostProjects, site.siteKey, frequency),
+    [history.jobCostProjects, site.siteKey, frequency],
+  );
   const canApply =
     average.averagePerVisit !== null &&
     average.selectedCount > 0 &&
@@ -1131,6 +1144,15 @@ function SiteDetail({
           </div>
         )}
       </div>
+
+      {history.jobCostDataset ? (
+        <div className="border-b border-slate-200 p-3 dark:border-slate-800">
+          <JobCostTable
+            projects={jobCost}
+            emptyText={`No ${frequency.toLowerCase()} job-cost projects for this site.`}
+          />
+        </div>
+      ) : null}
 
       {reviewOnly.length > 0 || excluded.length > 0 ? (
         <div className="p-3">

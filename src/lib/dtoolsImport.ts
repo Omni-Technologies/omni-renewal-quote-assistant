@@ -4,6 +4,8 @@ import {
   hasDtoolsHeaders,
   type ParsedDtoolsImport,
 } from './dtools';
+import { isJobCostHeader, mergeJobCostFiles, parseJobCostTable } from './jobCost';
+import type { JobCostDataset, JobCostRecord } from '../types';
 
 function newId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -112,4 +114,59 @@ export async function readDtoolsFile(
   }
 
   throw new Error('Choose a D-Tools .csv or .xlsx timesheet export.');
+}
+
+/**
+ * Reads one or more "Project Job Cost (By Phase)" workbooks into a single
+ * dataset that replaces the previous job-cost import.
+ */
+export async function readJobCostFiles(
+  files: readonly File[],
+  importedAt = Date.now(),
+): Promise<{ dataset: JobCostDataset; records: JobCostRecord[]; warnings: string[] }> {
+  if (files.length === 0) throw new Error('Choose at least one D-Tools job-cost workbook.');
+  const XLSX = await import('xlsx');
+  const datasetId = newId();
+  const parsed: Array<{ fileName: string; sheetName: string; fingerprint: string; records: JobCostRecord[] }> = [];
+  const warnings: string[] = [];
+  for (const [fileIndex, file] of files.entries()) {
+    const name = file.name || `job-cost-${fileIndex + 1}.xlsx`;
+    if (!/\.(xlsx|xlsm|xls)$/i.test(name)) {
+      throw new Error(`${name} is not an Excel workbook. Export Project Job Cost (By Phase) to Excel.`);
+    }
+    const buffer = await file.arrayBuffer();
+    const workbook = XLSX.read(buffer, { type: 'array', cellDates: false });
+    const candidates: Array<{ sheetName: string; table: unknown[][] }> = [];
+    for (const sheetName of workbook.SheetNames) {
+      const sheet = workbook.Sheets[sheetName];
+      if (!sheet['!ref']) continue;
+      const table = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+        header: 1,
+        raw: true,
+        defval: null,
+        blankrows: true,
+        range: { s: { r: 0, c: 0 }, e: XLSX.utils.decode_range(sheet['!ref']).e },
+      });
+      if (table.some((row) => isJobCostHeader(row))) candidates.push({ sheetName, table });
+    }
+    if (candidates.length === 0) {
+      throw new Error(`${name} is not a D-Tools Project Job Cost (By Phase) export.`);
+    }
+    if (candidates.length > 1) {
+      throw new Error(`${name} has several job-cost worksheets. Export a single worksheet.`);
+    }
+    const { sheetName, table } = candidates[0];
+    const result = parseJobCostTable({
+      table,
+      fileName: name,
+      sheetName,
+      datasetId,
+      fileIndex,
+      date1904: Boolean(workbook.Workbook?.WBProps?.date1904),
+    });
+    warnings.push(...result.warnings);
+    parsed.push({ fileName: name, sheetName, fingerprint: await fingerprint(buffer), records: result.records });
+  }
+  const merged = mergeJobCostFiles(datasetId, importedAt, parsed);
+  return { ...merged, warnings: [...warnings, ...merged.warnings] };
 }

@@ -2,7 +2,43 @@
 
 ## Current operating handoff — 2026-10-21
 
-### Compact Teams pricing text — 2026-10-21 (local verified; publication approved)
+### D-Tools job-cost budgeted vs actual hours — 2026-10-21 (local verified; not committed)
+
+- User requested import of the two D-Tools "Project Job Cost (By Phase)" xlsx
+  exports (updated versions include project numbers), filtered like the
+  timesheet history, with budgeted/actual hours and travel averages shown in
+  Contract pricing and Historical hours (Labor), and compared against the
+  timesheet history (about 3 years) to confirm they match.
+- New: src/lib/jobCost.ts (parse/merge/build/compare/summarize/site lookup),
+  src/lib/historyContextStore.ts (shared lazy history, reload/invalidate,
+  useRenewalJobCost), src/components/JobCostHistory.tsx (import panel, average
+  stats, table), jobCost.test.ts, jobCostDb.test.ts, scripts/jobcost_check.mjs.
+  Changed: types.ts, dtools.ts (exports helpers), dtoolsImport.ts
+  (readJobCostFiles), db.ts (Dexie v3 jobCostDatasets/jobCostProjects,
+  replaceJobCost/loadJobCost, backup version 2 with optional jobCost),
+  HistoricalHours.tsx (panel, site table, invalidation), PricingSection.tsx
+  (avg stats), LaborSection.tsx (table), App.tsx (restore reload/preview),
+  README. Pricing math and pricingSummary.ts unchanged.
+- Rules: same classification, site grouping and manual decisions as the
+  timesheet; shared phase blocks are not attributed to one project; averages
+  skip zero hours; timesheet comparison by project number, 0.01 h tolerance.
+  Older backups or backups made before any job-cost import leave current
+  job-cost history intact (fixed after harness-reviewer finding).
+- Real files (local only, never committed): 1,951 projects, 0 warnings,
+  1,507 included; 858 of 869 compared match the timesheet (8 mismatches);
+  averages budgeted 32.35 h, actual 37.19 h, travel budget 3.16 h.
+- Verified: npm.cmd run typecheck, lint, test (12 files, 198 tests), build
+  exit 0 (existing bundle-size warning). With PLAYWRIGHT_MODULE/CHROMIUM_PATH as
+  below: node scripts/jobcost_check.mjs (synthetic workbook, isolated profile),
+  layout_check.mjs and pricing_copy_check.mjs passed; no page errors.
+  harness-reviewer: no blocking issues; remaining low findings not fixed:
+  history load error hides job-cost UI silently, separate read transactions
+  for job cost and timesheet, per-file count with duplicate filenames, one
+  project number under two job-cost names shares one timesheet total.
+- Next: user imports both workbooks in their own browser on Historical Hours,
+  spot-checks a few sites; then ask once to commit/push.
+
+### Compact Teams pricing text — 2026-10-21 (deployed and verified)
 
 - User refined the personally validated Copy pricing output. Current format
   starts `Contract pricing update:` immediately followed by previous/proposed
@@ -20,9 +56,15 @@
   notes retained, averages/zero/blank handling, price changes, mileage cost only,
   collapsed fields, fallback, saved reload and mobile containment; no page errors.
   Final diff reviewed and git diff --check passed. No user-profile data touched.
-- User approved commit/push on2026-10-21. Next: commit/push to main, verify
-  automatic Pages deployment and hosted pricing_copy_check.mjs. Local app uses
-  compact text after refresh; hosted publication is in progress.
+- User approved commit/push on2026-10-21. Commitc8fd7e2 pushed to main;
+  Pages run39641682878 succeeded, including hosted typecheck/lint/Pages build.
+  Hosted node scripts/pricing_copy_check.mjs with PAGES_URL set to
+  https://omni-technologies.github.io/omni-renewal-quote-assistant/ passed exact
+  compact text, optional/whitespace-only notes, averages, changes, mileage cost
+  only, saved reload, selected fallback and mobile containment; no page errors.
+  Used synthetic data in an isolated profile. Refresh local or hosted app for
+  the shorter text. No remaining formatting/publication work. Deployment
+  evidence recorded locally in this STATUS update after the push.
 
 ### Copy contract pricing for Teams — 2026-10-21 (deployed and verified)
 

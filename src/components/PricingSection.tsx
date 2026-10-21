@@ -10,6 +10,8 @@ import {
   formatSignedCurrency,
 } from '../lib/format';
 import { Banner, Field, NumberInput, SectionCard, TextArea } from './ui';
+import { JobCostAverageStats } from './JobCostHistory';
+import { useRenewalJobCost } from '../lib/historyContextStore';
 
 export function PricingSection({
   renewal,
@@ -22,6 +24,7 @@ export function PricingSection({
 }) {
   const { pricing } = renewal;
   const summary = buildPricingSummary(renewal);
+  const jobCost = useRenewalJobCost(renewal);
   const [showCopyFallback, setShowCopyFallback] = useState(false);
   const textRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
@@ -112,6 +115,13 @@ export function PricingSection({
           />
         </Field>
       </div>
+      {jobCost ? (
+        jobCost.length > 0 ? (
+          <JobCostAverageStats projects={jobCost} />
+        ) : (
+          <p className="hint mt-2">No D-Tools job-cost projects match this site and frequency.</p>
+        )
+      ) : null}
       <details className="mt-3 group" open>
         <summary className="cursor-pointer text-xs font-semibold text-brand-700 dark:text-brand-300">More pricing details</summary>
       <div className="workspace-field-grid mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">

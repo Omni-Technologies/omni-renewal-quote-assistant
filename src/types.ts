@@ -160,6 +160,11 @@ export interface BackupFile {
     rows: DtoolsRow[];
     decisions: DtoolsProjectDecision[];
   };
+  /** Absent in backups made before job-cost import existed. */
+  jobCost?: {
+    dataset: JobCostDataset | null;
+    projects: JobCostRecord[];
+  };
 }
 
 /* ------------------------------------------------------------------------- */
@@ -303,6 +308,85 @@ export interface DtoolsSiteSummary {
   includedCount: number;
   totalHours: number;
   years: number[];
+}
+
+/* ------------------------------------------------------------------------- */
+/* D-Tools project job cost (budgeted vs actual hours)                        */
+/* ------------------------------------------------------------------------- */
+
+export interface JobCostPhase {
+  name: string;
+  budgetedHours: number;
+  actualHours: number;
+  budgetedLaborCost: number | null;
+  budgetedProductCost: number | null;
+}
+
+/** One project row from a "Project Job Cost (By Phase)" export. */
+export interface JobCostRecord {
+  id: string;
+  datasetId: string;
+  sourceFile: string;
+  sourceSheet: string;
+  sourceRow: number;
+  clientName: string;
+  projectName: string;
+  projectNumber: string;
+  status: string;
+  state: string;
+  /** ISO date (`YYYY-MM-DD`) or null when D-Tools has no start date. */
+  startDate: string | null;
+  budgetedHours: number;
+  actualHours: number;
+  budgetedLaborCost: number | null;
+  actualLaborCost: number | null;
+  projectManager: string;
+  resources: string;
+  /** Empty when the phase block is shared by several projects. */
+  phases: JobCostPhase[];
+  sharedPhaseBlock: boolean;
+}
+
+export interface JobCostDataset {
+  id: string;
+  importedAt: number;
+  projectCount: number;
+  files: Array<{
+    fileName: string;
+    sheetName: string;
+    fingerprint: string;
+    projectCount: number;
+  }>;
+}
+
+export type JobCostTimesheetStatus =
+  | 'match'
+  | 'approved-match'
+  | 'mismatch'
+  | 'before-timesheet'
+  | 'not-in-timesheet';
+
+export interface JobCostProject {
+  record: JobCostRecord;
+  key: string;
+  siteKey: string;
+  siteLabel: string;
+  classification: DtoolsClassification;
+  frequency: 'Annual' | 'Semi-Annual' | null;
+  year: number | null;
+  yearSource: 'manual' | 'title' | 'timesheet' | 'start-date' | null;
+  contractPosition: string | null;
+  included: boolean;
+  /** Budgeted Travel phase hours; null without a single-project Travel phase. */
+  travelBudgetedHours: number | null;
+  /** Null when no timesheet history is imported to compare against. */
+  timesheet: {
+    status: JobCostTimesheetStatus;
+    /** Approved plus unapproved timesheet hours for the project number. */
+    totalHours: number | null;
+    approvedHours: number | null;
+    difference: number | null;
+  } | null;
 }
 
 /**

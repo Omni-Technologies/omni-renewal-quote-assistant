@@ -32,7 +32,7 @@ export function collapseSpaces(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
-function projectKeyFor(projectNumber: string, projectName: string): string {
+export function projectKeyFor(projectNumber: string, projectName: string): string {
   const number = normalizeText(projectNumber) || 'no-number';
   return `${number}::${normalizeText(projectName)}`;
 }
@@ -78,7 +78,7 @@ export function deriveSiteLabel(projectName: string): string {
   return label || collapseSpaces(projectName);
 }
 
-function siteKeyFor(clientName: string, projectName: string): string {
+export function siteKeyFor(clientName: string, projectName: string): string {
   const client = normalizeText(clientName).replace(/\buwcu\b/g, 'uw credit union');
   const expandedSite = normalizeText(deriveSiteLabel(projectName)).replace(/\buwcu\b/g, 'uw credit union');
   if (
@@ -421,7 +421,7 @@ export function classifyProjectName(projectName: string): ProjectClassification 
   };
 }
 
-function contractPositionOf(text: string): string | null {
+export function contractPositionOf(text: string): string | null {
   const match = text.match(/\b(\d+)\s*of\s*(\d+)\b/i);
   return match ? `${match[1]} of ${match[2]}` : null;
 }
@@ -437,7 +437,7 @@ interface YearInference {
   needsReview: boolean;
 }
 
-function titleYears(projectName: string): number[] {
+export function titleYears(projectName: string): number[] {
   return [
     ...new Set(
       [...projectName.matchAll(/\b(19\d{2}|20\d{2})\b/g)].map((match) =>

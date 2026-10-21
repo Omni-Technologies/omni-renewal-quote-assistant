@@ -28,6 +28,7 @@ import { Sidebar } from './components/Sidebar';
 import { RenewalWorkspace } from './components/RenewalWorkspace';
 import { HistoricalHours } from './components/HistoricalHours';
 import { applyHistoryToRenewal, type HistoryApplyPayload } from './lib/dtools';
+import { reloadHistoryContext } from './lib/historyContextStore';
 import { ConfirmDialog, Toast } from './components/ui';
 
 type Theme = 'light' | 'dark';
@@ -337,6 +338,7 @@ export default function App() {
         const rows = await listRenewals();
         setRenewals(rows);
         if (preview.backup.dtools) setHistoryVersion((version) => version + 1);
+        if (preview.backup.dtools || preview.backup.jobCost) await reloadHistoryContext();
         setSelectedId(preview.backup.renewals[0]?.id ?? rows[0]?.id ?? null);
         setQuery('');
         setSaveState('saved');
@@ -643,6 +645,11 @@ export default function App() {
               {restorePreview.backup.dtools ? (
                 <p className="text-[12px] text-slate-500 dark:text-slate-400">
                   The current D-Tools history and decisions will be replaced with {restorePreview.backup.dtools.rows.length} timesheet rows and {restorePreview.backup.dtools.decisions.length} manual decisions from this backup.
+                </p>
+              ) : null}
+              {restorePreview.backup.jobCost ? (
+                <p className="text-[12px] text-slate-500 dark:text-slate-400">
+                  The current D-Tools job-cost history will be replaced with {restorePreview.backup.jobCost.projects.length} job-cost projects from this backup.
                 </p>
               ) : null}
               <p className="text-[12px] text-slate-500 dark:text-slate-400">

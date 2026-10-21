@@ -77,6 +77,9 @@ browser profile that opened the app. Nothing is sent anywhere.
   matches an existing renewal — are rejected before any database write.
 - Invalid JSON, wrong backup format, unsupported versions, and unusable records
   are rejected or skipped with a visible message.
+- Backups include the timesheet and job-cost history. Restoring an older backup
+  without job-cost history, or one made before any job-cost import, leaves the
+  current job-cost history in place.
 
 The JSON contains confidential client data. Store backups on `N:` or another
 approved internal location, not in public cloud storage.
@@ -127,6 +130,29 @@ keeps renewals and manual decisions.
 Duration is read as decimal hours exactly as exported. It is never multiplied
 by 24. The tool only shows **actual approved hours**; it does not invent
 originally quoted/bid hours.
+
+## Budgeted vs actual hours (D-Tools job cost)
+
+The D-Tools **Project Job Cost (By Phase)** report gives budgeted and actual
+hours for every project, with a Travel phase where one exists. On **Historical
+Hours**, click **Import job-cost workbooks** and select one or more exports at
+once. Projects in both files are kept once; the same project number with
+different hours stops the import. A new import replaces the previous one.
+
+- Projects use the same classification, site grouping and manual decisions as
+  the timesheet history, so excluded projects stay excluded.
+- A phase block shared by several projects is shown as **Shared** and is not
+  counted in the travel average.
+- Each project's actual hours are compared against the timesheet history by
+  project number: **Matches**, **Differs X h**, **Before timesheet export** or
+  **Not in timesheet**. The timesheet export only reaches back about three
+  years, so older projects cannot be compared.
+- Averages skip projects with zero hours.
+- A renewal shows the site's averages (D-Tools avg budgeted, actual and travel
+  budget) in **Contract pricing**, and the per-year table under **Historical
+  hours**. The site is found from the D-Tools project number, the applied
+  history, or the client and location. These are reference figures; they
+  never change the price, quoted hours or mileage.
 
 ## Daily workflow
 
@@ -279,15 +305,17 @@ The importer is intentionally split from the quote editor:
 - `Renewal.labor.source` becomes `'imported'`; quoted hours stay independent.
 
 The original quoted/bid hours are not present in this approved timesheet
-export. The data model leaves room for a future D-Tools budget/quoted export;
-today, original quoted hours can be entered manually per project.
+export. They come from the job-cost workbooks instead: `src/lib/jobCost.ts`
+parses and compares them, `readJobCostFiles()` reads the files, Dexie tables
+`jobCostDatasets` and `jobCostProjects` (schema v3) hold them, and
+`src/lib/historyContextStore.ts` shares the loaded history with the workspace.
 
 ## Known limitations
 
 - D-Tools is not automated; the SOW is copied to the clipboard for manual paste.
-- The approved timesheet export contains actual hours only. Originally quoted
-  or budgeted hours must be entered manually until a D-Tools budget export is
-  available.
+- The approved timesheet export contains actual hours only. Budgeted hours come
+  from the separate job-cost workbooks; budgeted travel is only known where a
+  project has its own Travel phase.
 - Ambiguous project titles are intentionally sent to **Needs review** instead
   of being auto-included. Review them once and save decisions.
 - XLSX support reads the first worksheet that contains the timesheet columns;

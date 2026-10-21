@@ -18,6 +18,8 @@ import {
   Segmented,
   TextInput,
 } from './ui';
+import { JobCostTable } from './JobCostHistory';
+import { useRenewalJobCost } from '../lib/historyContextStore';
 
 export function LaborSection({
   renewal,
@@ -28,6 +30,7 @@ export function LaborSection({
 }) {
   const { labor } = renewal;
   const stats = calculateHistoryStats(labor.history);
+  const jobCost = useRenewalJobCost(renewal);
   const suggestedMileage = suggestedMileageUnitCost(labor.quotedHours);
   const mileage = effectiveMileageUnitCost(labor.quotedHours, labor.mileageOverride);
   const difference = hoursDifference(labor.quotedHours, stats.averageHours);
@@ -217,6 +220,15 @@ export function LaborSection({
             These are actual timesheet hours, not originally quoted/bid hours. Quoted hours stay
             separate in Contract pricing above.
           </p>
+        </div>
+      ) : null}
+
+      {jobCost ? (
+        <div className="mt-3 rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+          <JobCostTable
+            projects={jobCost}
+            emptyText="No D-Tools job-cost projects match this site and frequency. Apply a site from Historical hours or set the D-Tools project number."
+          />
         </div>
       ) : null}
 
