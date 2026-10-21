@@ -1,6 +1,32 @@
 # STATUS — OMNI Renewal Quote Assistant
 
-## Current operating handoff — 2026-10-20
+## Current operating handoff — 2026-10-21
+
+### East Madison Toyota history grouping — 2026-10-21 (local fix verified; publication approved)
+
+- Acceptance: all observed East Madison Toyota years appear in one history site
+  despite renamed clients, including existing imports after refresh; unrelated
+  clients/locations remain separate and original rows/manual decisions survive.
+- Actual export contains 23-0214 (2023), 24-0156 (2024) under Penske Auto,
+  and 24-1792 (2025), 26-0593 (2026) under PAG Madison T1 dba East Madison
+  Toyota. The 2025 title adds (Penske Auto). All four are annual inspections.
+- src/lib/dtools.ts adds an exact client-and-site alias for only those names;
+  uses the existing current-client site key. buildProjects already recomputes
+  keys from source names, so no database migration/reimport or source edits.
+  No renewal, project decision, pricing, classification or source-row changes.
+- Regression coverage in dtools.test.ts verifies old stored keys, preserved
+  decisions and boundaries; dtoolsAudit.test.ts checks all four actual projects.
+  scripts/inline_history_check.mjs verifies one browser result with all four
+  projects before/after reload with simulated legacy keys in an isolated profile,
+  then runs the established inline apply/preservation/reload checks. README updated.
+- Verified npm.cmd run typecheck, npm.cmd run lint, npm.cmd test (180 tests),
+  npm.cmd run build: all exit0; existing bundle-size warning remains.
+  Browser: set PLAYWRIGHT_MODULE and CHROMIUM_PATH as documented below, then
+  node scripts/inline_history_check.mjs: exit0, no page errors. No user profile
+  touched. Final diff reviewed and git diff --check passed.
+- User approved commit/push on2026-10-21. Next: commit and push to main,
+  then verify automatic Pages deployment and hosted smoke checks. Local app
+  at127.0.0.1:5173 uses the fix after refresh. Hosted publication in progress.
 
 ### Focused visual polish — 2026-10-20 (deployed and verified)
 

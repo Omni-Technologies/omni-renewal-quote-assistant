@@ -15,6 +15,30 @@ try {
   await page.getByRole('button', { name: 'Historical Hours', exact: true }).click();
   await field('Import D-Tools timesheet export').setInputFiles(fileURLToPath(new URL('../Time Sheets Oct 19, 2026 02 57.csv', import.meta.url)));
   await field('Search company, client, or location').waitFor();
+  const historySearch = field('Search company, client, or location');
+  await historySearch.fill('East Madison Toyota');
+  const toyota = page.getByRole('button').filter({ hasText: 'PAG Madison T1 dba East Madison Toyota' });
+  await toyota.waitFor();
+  assert.equal(await toyota.count(), 1);
+  await toyota.click();
+  for (const number of ['23-0214', '24-0156', '24-1792', '26-0593']) {
+    await page.getByText(number, { exact: true }).waitFor();
+  }
+  await page.evaluate(async () => {
+    const { db } = await import('/src/lib/db.ts');
+    await db.dtoolsRows.toCollection().modify((row) => {
+      if (/East Madison Toyota/.test(row.projectName)) row.siteKey = `old::${row.projectNumber}`;
+    });
+  });
+  await page.reload();
+  await page.getByRole('button', { name: 'Historical Hours', exact: true }).click();
+  await historySearch.fill('East Madison Toyota');
+  await toyota.waitFor();
+  assert.equal(await toyota.count(), 1);
+  await toyota.click();
+  for (const number of ['23-0214', '24-0156', '24-1792', '26-0593']) {
+    await page.getByText(number, { exact: true }).waitFor();
+  }
   await page.getByRole('button', { name: 'New Renewal', exact: true }).click();
   await field('Company name').fill('Keep company');
   await field('Full site address').fill('123 Main Street, Madison, WI 53703');
@@ -74,7 +98,7 @@ try {
   assert.equal(await duplicatePage.getByLabel('Start with historical hours', { exact: true }).inputValue(), 'Main Office');
   assert.deepEqual(errors, []);
   await duplicatePage.close();
-  console.log('PASS: live inline filtering, site selection, source history, stale-selection guard, confirmed apply without navigation, preserved manual fields, narrow layout, dismissal and saved reload. No page errors.');
+  console.log('PASS: East Madison Toyota 2023–2026 grouping and saved-import refresh, live inline filtering, site selection, source history, stale-selection guard, confirmed apply without navigation, preserved manual fields, narrow layout, dismissal and saved reload. No page errors.');
 } finally {
   await browser.close();
 }

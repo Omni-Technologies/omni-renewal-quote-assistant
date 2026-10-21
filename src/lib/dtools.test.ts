@@ -262,6 +262,29 @@ describe('D-Tools parsing and classification', () => {
     expect(buildSiteSummaries(projects)).toHaveLength(3);
   });
 
+  it('joins exact East Madison Toyota client/title aliases, including saved imports, without merging other sites', () => {
+    const parsed = parse([
+      row({ 'Client Name': 'Penske Auto', 'Project Name': 'I&T - FA East Madison Toyota Annual Fire Alarm Inspection 2023 4 of 5', 'Project Number': '23-0214' }),
+      row({ 'Client Name': 'Penske Auto', 'Project Name': 'I&T - FA East Madison Toyota Annual Fire Alarm Inspection 2024 5 of 5', 'Project Number': '24-0156' }),
+      row({ 'Client Name': 'PAG Madison T1 dba East Madison Toyota', 'Project Name': 'I&T - FA East Madison Toyota (Penske Auto) Annual Fire Alarm Inspection 2025', 'Project Number': '24-1792' }),
+      row({ 'Client Name': 'PAG Madison T1 dba East Madison Toyota', 'Project Name': 'I&T - FA East Madison Toyota Annual Fire Alarm Inspection 2026', 'Project Number': '26-0593' }),
+      row({ 'Client Name': 'Penske Auto', 'Project Name': 'I&T - FA West Madison Toyota Annual Fire Alarm Inspection 2025', 'Project Number': '25-0001' }),
+      row({ 'Client Name': 'Other Client', 'Project Name': 'I&T - FA East Madison Toyota Annual Fire Alarm Inspection 2025', 'Project Number': '25-0002' }),
+      row({ 'Client Name': 'PAG Madison T1 dba East Madison Toyota', 'Project Name': 'I&T - FA East Madison Toyota Annex Annual Fire Alarm Inspection 2025', 'Project Number': '25-0003' }),
+    ]);
+    const key = parsed.rows[0].siteKey;
+    expect(parsed.rows.slice(0, 4).every((entry) => entry.siteKey === key)).toBe(true);
+    const savedRows = parsed.rows.map((entry) => ({ ...entry, siteKey: `old::${entry.projectNumber}` }));
+    const originalProject = buildProjects(savedRows).find((project) => project.projectNumber === '24-1792')!;
+    const manualDecision = decision(originalProject, { quotedHours: 12, note: 'Keep original quote' });
+    const projects = buildProjects(savedRows, new Map([[originalProject.key, manualDecision]]));
+    const grouped = projects.filter((project) => project.siteKey === key);
+    expect(grouped.map((project) => project.projectNumber).sort()).toEqual(['23-0214', '24-0156', '24-1792', '26-0593']);
+    expect(grouped.find((project) => project.projectNumber === '24-1792')?.decision).toEqual(manualDecision);
+    expect(grouped.find((project) => project.projectNumber === '23-0214')?.entries[0].row.clientName).toBe('Penske Auto');
+    expect(buildSiteSummaries(projects)).toHaveLength(4);
+  });
+
   it('groups the observed Wisconsin DNR site titles across 2024, 2025, and 2026', () => {
     const parsed = parse([
       row({

@@ -104,6 +104,17 @@ describe('independent full-source reconciliation', () => {
     expect(searchSites(sites, 'UW Credit Union').length).toBeGreaterThan(1);
   });
 
+  it('joins all four actual East Madison Toyota years across the client rename', () => {
+    const sites = buildSiteSummaries(projects);
+    const matches = searchSites(sites, 'East Madison Toyota');
+    expect(matches).toHaveLength(1);
+    expect(matches[0].years).toEqual([2026, 2025, 2024, 2023]);
+    const grouped = projects.filter((project) => project.siteKey === matches[0].siteKey);
+    expect(grouped.map((project) => project.projectNumber).sort()).toEqual(['23-0214', '24-0156', '24-1792', '26-0593']);
+    expect(grouped.every((project) => project.included && project.effectiveFrequency === 'Annual')).toBe(true);
+    expect(searchSites(sites, 'Penske Auto').map((site) => site.siteKey)).toContain(matches[0].siteKey);
+  });
+
   it('searches original project titles and keeps parent-client locations separate', () => {
     const sites = buildSiteSummaries(projects);
     const matches = searchSites(sites, 'I&T - FA Decade Annual 2026');

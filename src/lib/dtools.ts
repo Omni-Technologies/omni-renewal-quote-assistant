@@ -81,6 +81,12 @@ export function deriveSiteLabel(projectName: string): string {
 function siteKeyFor(clientName: string, projectName: string): string {
   const client = normalizeText(clientName).replace(/\buwcu\b/g, 'uw credit union');
   const expandedSite = normalizeText(deriveSiteLabel(projectName)).replace(/\buwcu\b/g, 'uw credit union');
+  if (
+    ['penske auto', 'pag madison t1 dba east madison toyota'].includes(client) &&
+    ['east madison toyota', 'east madison toyota penske auto'].includes(expandedSite)
+  ) {
+    return 'pag madison t1 dba east madison toyota::east madison toyota';
+  }
   const site = expandedSite.startsWith('uw credit union ')
     ? expandedSite.replace(/ branch$/, '')
     : expandedSite;

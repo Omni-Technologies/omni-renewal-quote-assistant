@@ -101,6 +101,11 @@ suffix for those sites. Location still must match: New Berlin variants join
 across years while other branches stay separate. Refresh to apply this to
 existing imports; no reimport is needed.
 
+East Madison Toyota history also joins the verified Penske Auto and PAG Madison
+T1 dba East Madison Toyota client names, including the location title with
+`(Penske Auto)`. Its 2023–2026 inspections appear together after refresh without
+reimporting; other locations and original source details stay separate.
+
 Classification is deterministic and deliberately conservative:
 
 - Confirmed annual / semi-annual fire alarm inspection titles are included.
