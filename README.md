@@ -154,6 +154,42 @@ different hours stops the import. A new import replaces the previous one.
   history, or the client and location. These are reference figures; they
   never change the price, quoted hours or mileage.
 
+### One history: job cost first, timesheets as a cross-check
+
+The D-Tools **job-cost workbooks** (all I&T projects) are the main history.
+Their actual hours are the summed timesheet hours, and they also carry budgeted
+hours for every year. The timesheet export is optional. It was the first
+experiment, and it is now used only to verify job cost and to fill gaps.
+**Historical Hours** shows one list of occurrences per site:
+
+- Each occurrence with a job-cost record counts its **D-Tools job-cost actual
+  hours**. The **Source** column shows how it checks against the timesheet:
+  **Job cost** (no timesheet rows, e.g. older years),
+  **Job cost · timesheet verified**, or **Job cost · timesheet differs X h**.
+  The timesheet total is printed under the hours, and the timesheet rows stay
+  viewable when you expand the occurrence.
+- Timesheet hours count only when job cost has no record for the occurrence
+  (**Timesheet only**) or its record shows 0 actual hours (**Timesheet (job cost
+  has no hours)**).
+- The three most recent years are selected automatically. Older years are
+  listed unchecked; check any to add them to the average. Zero-hour rows never
+  count, and unrelated work stays out unless you include it manually.
+- History works from the job-cost workbooks alone; no timesheet import is
+  needed. Applied history says **D-Tools job-cost actual hours** in its basis.
+  A saved summary keeps the timesheet hours next to each job-cost total, so
+  backups keep the cross-check.
+
+`src/lib/unifiedHistory.ts` (`buildUnifiedHistory`, `occurrenceRows`) is the
+combined data layer for building per-company or group-quote spreadsheets. It
+returns one flat row per occurrence with these fields:
+
+- `hours`: the counted hours.
+- `hoursSource`: which export those hours came from.
+- `jobCostActualHours`, budgeted hours and travel budget.
+- `timesheetHours`: eligible approved timesheet hours.
+- `difference`: job cost minus timesheet.
+- `timesheetVerified`.
+
 ## Daily workflow
 
 Start with the **historical hours search** at the top of a renewal. Matching

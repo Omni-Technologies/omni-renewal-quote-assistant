@@ -254,6 +254,8 @@ function normalizeImportSummary(raw: unknown): LaborImportSummary | null {
         ...(project.frequency === 'Annual' || project.frequency === 'Semi-Annual'
           ? { frequency: project.frequency as 'Annual' | 'Semi-Annual' }
           : {}),
+        ...(project.hoursSource === 'job-cost' ? { hoursSource: 'job-cost' as const } : {}),
+        ...(asNumber(project.timesheetHours) !== null ? { timesheetHours: asNumber(project.timesheetHours) as number } : {}),
         ...(Array.isArray(project.entries)
           ? { entries: project.entries.filter(isValidSnapshotEntry) as DtoolsProjectEntry[] }
           : {}),
@@ -531,6 +533,9 @@ export function validateBackupRenewal(raw: unknown): BackupRenewalValidation {
           asNumber(project.hours) === null ||
           asNumber(project.entryCount) === null ||
           (project.frequency !== undefined && project.frequency !== 'Annual' && project.frequency !== 'Semi-Annual') ||
+          (project.hoursSource !== undefined && project.hoursSource !== 'job-cost') ||
+          (project.timesheetHours !== undefined && asNumber(project.timesheetHours) === null) ||
+          (project.hoursSource === 'job-cost' && project.entries !== undefined) ||
           (project.entries !== undefined && (!Array.isArray(project.entries) ||
             project.entries.some((entry) => !isValidSnapshotEntry(entry) ||
               entry.row.projectKey !== project.projectKey || normalizeText(entry.row.projectNumber) !== normalizeText(project.projectNumber as string) ||

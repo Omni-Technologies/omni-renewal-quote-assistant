@@ -113,6 +113,11 @@ export function LaborSection({
                       </tr>
                     ))}</tbody>
                   </table>
+                ) : project.hoursSource === 'job-cost' ? (
+                  <p>
+                    D-Tools job-cost actual hours
+                    {project.timesheetHours !== undefined ? ` · timesheet rows total ${project.timesheetHours.toFixed(8)} h` : ' · no timesheet rows for this project'}.
+                  </p>
                 ) : <p>Older saved summary: reselect this inspection from Historical Hours to preserve its source rows.</p>}
               </div>
             </details>
@@ -179,7 +184,7 @@ export function LaborSection({
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.07em] text-emerald-700 dark:text-emerald-300">
-                Actual approved hours imported from D-Tools
+                Actual hours imported from D-Tools
               </div>
               <div className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">
                 {labor.importSummary.fileName} · imported{' '}
@@ -208,7 +213,9 @@ export function LaborSection({
                 </span>
                 <span className="shrink-0 tabular-nums text-slate-500 dark:text-slate-400">
                   {project.projectNumber ? `#${project.projectNumber} · ` : ''}
-                  {project.entryCount} entr{project.entryCount === 1 ? 'y' : 'ies'} ·{' '}
+                  {project.hoursSource === 'job-cost'
+                    ? 'job cost · '
+                    : `${project.entryCount} entr${project.entryCount === 1 ? 'y' : 'ies'} · `}
                   <span className="font-semibold text-slate-700 dark:text-slate-200">
                     {formatHours(project.hours)}
                   </span>
@@ -217,7 +224,8 @@ export function LaborSection({
             ))}
           </div>
           <p className="mt-1.5 text-[10.5px] text-emerald-800/80 dark:text-emerald-200/70">
-            These are actual timesheet hours, not originally quoted/bid hours. Quoted hours stay
+            These are actual hours (D-Tools job cost, timesheet rows where job cost has none), not
+            originally quoted/bid hours. Quoted hours stay
             separate in Contract pricing above.
           </p>
         </div>

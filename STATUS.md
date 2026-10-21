@@ -2,7 +2,67 @@
 
 ## Current operating handoff — 2026-10-21
 
-### D-Tools job-cost budgeted vs actual hours — 2026-10-21 (local verified; not committed)
+### One history, job cost primary — 2026-10-21 (local verified; commit and push approved)
+
+- User clarification: timesheets were an early test. The job-cost export (all
+  I&T) is the main history; its actual hours equal summed timesheets. Use the
+  timesheet to fill in and to note differences. The history will feed Excel
+  sheets for the company president, so accuracy matters.
+- Rules (src/lib/unifiedHistory.ts):
+  - A timesheet occurrence that links to job cost (by key, else by a unique
+    project number) counts the **job-cost actual hours**. It gets
+    source 'job-cost' and timesheetHours, which are the eligible timesheet
+    hours (approved, minus flagged unless included). A reason notes any
+    difference over 0.01 h.
+  - A linked job-cost record with 0 actual hours keeps the timesheet hours.
+  - Job-cost records with no timesheet rows are added at their actual hours.
+  - An unlinked job-cost title that shares a timesheet number is listed as
+    needs-review and unchecked.
+  - occurrenceRows adds hoursSource and timesheetVerified.
+- Saved summary (dtools.ts selectionSummary, model.ts):
+  - Job-cost-hours projects store hoursSource 'job-cost' and timesheetHours,
+    with no entries and entryCount 0.
+  - Backup validation rejects hoursSource together with entries, a bad
+    hoursSource value, and non-numeric timesheetHours.
+  - Older backups without these fields still load unchanged.
+  - The summary datasetId follows the timesheet dataset only when a picked
+    project carries entries.
+- UI:
+  - HistoricalHours: the Source chips are Job cost, Job cost · timesheet
+    verified, Job cost · timesheet differs X h, Timesheet only, and Timesheet
+    (job cost has no hours). The timesheet total shows under the hours, and
+    linked rows still expand to their timesheet rows. The flagged toggle is
+    hidden for job-cost-hours rows.
+  - The history now works with job-cost workbooks alone; no timesheet import
+    is needed.
+  - LaborSection describes job-cost summaries. README section rewritten.
+- Verified:
+  - typecheck, lint, test (13 files, 209 tests) and build all exit 0. The
+    chunk-size warning was already there.
+  - All 5 browser scripts pass against local dev. unified_history_check now
+    runs job-cost-only (applied 12/16.5/18) and then both exports (applied
+    11/12/16.5/18; job cost wins over timesheet 17).
+  - A test helper gotcha: makeRenewal ignores labor.importSummary. The
+    backup-summary tests now build the renewal directly.
+- harness-reviewer:
+  - Fixed a real double count. When several timesheet titles shared one
+    project number, each was linked to the same job-cost record and counted its
+    full actual hours. Now a record counts once: an exact key match wins, and
+    number-only matches drop out when the record is claimed twice. The dropped
+    occurrences keep their timesheet hours with a reason; the test fails
+    without the guard.
+  - occurrenceRows.difference is now null when job cost has 0 hours.
+  - Not changed (low): approvedHours, flaggedHours and similar fields on a
+    job-cost-hours project still describe its timesheet rows.
+- Open (low): excluded job-cost-only work has no Include path in the UI.
+  The difference is measured against eligible timesheet hours, so it can
+  flag more rows than the Job Cost tab's approved-total comparison.
+
+### D-Tools job-cost budgeted vs actual hours — 2026-10-21 (deployed and verified)
+
+- Commit 6d1542a pushed to main; Pages run 39669860328 succeeded. Hosted
+  node scripts/jobcost_check.mjs with PAGES_URL set passed (synthetic data,
+  isolated profile). Recorded locally after the push.
 
 - User requested import of the two D-Tools "Project Job Cost (By Phase)" xlsx
   exports (updated versions include project numbers), filtered like the

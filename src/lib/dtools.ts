@@ -1230,6 +1230,7 @@ export function defaultSelectedKeys(
     .sort(
       (a, b) =>
         (b.effectiveYear ?? 0) - (a.effectiveYear ?? 0) ||
+        Number(b.source === 'job-cost') - Number(a.source === 'job-cost') ||
         b.lastDate.localeCompare(a.lastDate),
     );
 
@@ -1439,9 +1440,15 @@ export function selectionSummary(
       projectNumber: project.projectNumber,
       year: project.effectiveYear as number,
       hours: project.totalHours,
-      entryCount: project.entries.filter((entry) => entry.included).length,
+      entryCount: project.source === 'job-cost' ? 0 : project.entries.filter((entry) => entry.included).length,
       frequency: project.effectiveFrequency ?? undefined,
-      entries: project.entries,
+      // Job-cost hours are not the sum of timesheet rows, so only timesheet-counted hours keep their rows.
+      ...(project.source === 'job-cost'
+        ? {
+            hoursSource: 'job-cost' as const,
+            ...(project.timesheetHours !== undefined ? { timesheetHours: project.timesheetHours } : {}),
+          }
+        : { entries: project.entries }),
     }));
 }
 

@@ -86,6 +86,10 @@ export interface LaborImportSummary {
     hours: number;
     entryCount: number;
     frequency?: 'Annual' | 'Semi-Annual';
+    /** `job-cost` when `hours` are D-Tools job-cost actual hours; absent means summed timesheet rows. */
+    hoursSource?: 'job-cost';
+    /** Eligible timesheet hours recorded for comparison when job-cost hours are counted. */
+    timesheetHours?: number;
     entries?: DtoolsProjectEntry[];
   }>;
 }
@@ -293,6 +297,10 @@ export interface DtoolsProject {
   effectiveYear: number | null;
   included: boolean;
   entries: DtoolsProjectEntry[];
+  /** Where the counted hours come from: `job-cost` actual hours, or timesheet rows (absent means timesheet). */
+  source?: 'timesheet' | 'job-cost';
+  /** Eligible timesheet hours when the occurrence also has timesheet rows; absent for job-cost-only rows. */
+  timesheetHours?: number;
 }
 
 export interface DtoolsSiteSummary {
