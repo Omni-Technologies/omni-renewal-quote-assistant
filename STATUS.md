@@ -2,7 +2,29 @@
 
 ## Current operating handoff — 2026-10-21
 
-### Copy contract pricing for Teams — 2026-10-21 (local verified; publication approved)
+### Compact Teams pricing text — 2026-10-21 (local verified; publication approved)
+
+- User refined the personally validated Copy pricing output. Current format
+  starts `Contract pricing update:` immediately followed by previous/proposed
+  annual prices, annual dollar change and percent change. Then `avg hours:`,
+  proposed quoted labor hours, labor rate and `Mileage cost:`. No company,
+  location, project, contract context, average entry count, mileage markup or
+  customer mileage charge in copied text. Notes line appears only when trimmed
+  pricing notes are nonempty. This supersedes the verbose format below.
+- Changed pricingSummary.ts, scripts/pricing_copy_check.mjs and README only;
+  pricing UI/calculations, existing clipboard button/fallback and data unchanged.
+- Verified npm.cmd run typecheck, npm.cmd run lint, npm.cmd test (180 tests),
+  npm.cmd run build: exit0; existing bundle-size warning remains.
+  With PLAYWRIGHT_MODULE/CHROMIUM_PATH as below, node scripts/pricing_copy_check.mjs
+  passed exact compact clipboard text, blank/whitespace notes omitted, populated
+  notes retained, averages/zero/blank handling, price changes, mileage cost only,
+  collapsed fields, fallback, saved reload and mobile containment; no page errors.
+  Final diff reviewed and git diff --check passed. No user-profile data touched.
+- User approved commit/push on2026-10-21. Next: commit/push to main, verify
+  automatic Pages deployment and hosted pricing_copy_check.mjs. Local app uses
+  compact text after refresh; hosted publication is in progress.
+
+### Copy contract pricing for Teams — 2026-10-21 (deployed and verified)
 
 - User requested a one-click Contract pricing summary for Teams list comments,
   then explicitly added historical average hours. Acceptance: copy the full
@@ -32,11 +54,16 @@
   node scripts/layout_check.mjs passed all390–1440px, keyboard/dark/reload and
   linked-pricing checks; inspected desktop-three-columns.png with new button.
   Final diff reviewed; git diff --check passed. No user-profile data touched.
-- User approved commit/push for this feature on2026-10-21. Next: commit and
-  push to main, verify automatic Pages deployment, then run hosted
-  scripts/pricing_copy_check.mjs and scripts/pages_check.mjs with PAGES_URL.
-  Local app has the feature after refresh; hosted publication in progress.
-  This commit also includes the prior Toyota deployment evidence in STATUS.
+- User approved commit/push on2026-10-21. Commit2d612ab pushed to main;
+  Pages run39640021018 succeeded, including typecheck/lint/Pages build.
+  Hosted scripts/pricing_copy_check.mjs and scripts/pages_check.mjs both exit0
+  with PAGES_URL=https://omni-technologies.github.io/omni-renewal-quote-assistant/.
+  Verified real clipboard summary including historical averages, blank/zero
+  handling, changes, mileage, fallback, saved reload and mobile containment;
+  assets/logos/favicon and linked-pricing smoke check also passed. No page or
+  request errors. Checks use synthetic data in isolated profiles.
+  Refresh local or hosted app for Copy pricing. No remaining feature/publication
+  work. Final deployment evidence recorded locally in STATUS after the push.
 
 ### East Madison Toyota history grouping — 2026-10-21 (deployed and verified)
 

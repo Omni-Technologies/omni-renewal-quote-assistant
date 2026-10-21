@@ -19,7 +19,8 @@ try {
   await page.goto(process.env.PAGES_URL || 'http://127.0.0.1:5173');
   await page.getByRole('button', { name: 'New Renewal', exact: true }).click();
   assert.match(await copied(), /Previous annual price: —\nProposed annual price: —\nAnnual change: —\nPercent change: n\/a/);
-  assert.match(await copied(), /Historical average hours: — \(0 entries\)/);
+  assert.match(await copied(), /avg hours: —/);
+  assert.doesNotMatch(await copied(), /Notes about pricing changes:/);
   await field('Company name').fill('Example company');
   await field('Location name').fill('Example branch');
   await field('D-Tools project number').fill('TEST-1234');
@@ -32,31 +33,28 @@ try {
   await historyHours.nth(1).fill('12');
   await field('Notes about pricing changes').fill('Added devices and travel.\nReviewed with Mike.');
   const expected = [
-    'Contract pricing update',
-    'Company: Example company',
-    'Location: Example branch',
-    'D-Tools project: TEST-1234',
-    'Contract: Annual, 3 years (2027–2029)',
-    '',
+    'Contract pricing update:',
     'Previous annual price: $1,000.00',
     'Proposed annual price: $1,290.00',
     'Annual change: +$290.00',
     'Percent change: +29.0%',
     '',
-    'Historical average hours: 11 h (2 entries)',
+    'avg hours: 11 h',
     'Proposed quoted labor hours: 13 h',
     'Labor rate: $90.00/hour',
-    'Annual mileage cost: $100.00',
-    'Mileage markup (20%): $20.00',
-    'Annual mileage charge (included in annual price): $120.00',
+    'Mileage cost: $100.00',
     '',
     'Notes about pricing changes: Added devices and travel.\nReviewed with Mike.',
   ].join('\n');
   await page.locator('summary').filter({ hasText: 'More pricing details' }).click();
   assert.equal(await copied(), expected, 'Collapsed pricing details still copy all values');
   await page.locator('summary').filter({ hasText: 'More pricing details' }).click();
+  await field('Notes about pricing changes').fill('   ');
+  const noNotes = await copied();
+  assert.equal(noNotes, expected.split('\n\nNotes about pricing changes:')[0], 'Whitespace-only notes omit the line and trailing blank section');
+  await field('Notes about pricing changes').fill('Added devices and travel.\nReviewed with Mike.');
   await historyHours.nth(2).fill('0');
-  assert.match(await copied(), /Historical average hours: 7\.33 h \(3 entries\)/);
+  assert.match(await copied(), /avg hours: 7\.33 h/);
   await historyHours.nth(2).fill('');
   await field('Previous annual contract price').fill('1500');
   assert.match(await copied(), /Annual change: −\$210\.00\nPercent change: -14\.0%/);
@@ -67,8 +65,8 @@ try {
   await field('Annual mileage cost').fill('150');
   const manual = await copied();
   assert.match(manual, /Proposed annual price: \$1,350\.00/);
-  assert.match(manual, /Annual mileage cost: \$150\.00\nMileage markup \(20%\): \$30\.00/);
-  assert.match(manual, /Annual mileage charge \(included in annual price\): \$180\.00/);
+  assert.match(manual, /Mileage cost: \$150\.00/);
+  assert.doesNotMatch(manual, /markup|mileage charge|Company:|Location:|D-Tools project:|Contract:/i);
   await page.waitForTimeout(700);
   await page.reload();
   await copy.waitFor();
@@ -91,7 +89,7 @@ try {
     assert.ok(bounds && bounds.x >= 0 && bounds.x + bounds.width <= width, `${width}: copy button fits`);
   }
   assert.deepEqual(errors, []);
-  console.log('PASS: pricing clipboard text, historical average with blank/zero handling, full details while collapsed, increases/decreases/zero/missing prices, manual mileage, saved reload, selected fallback, fresh edits and desktop/mobile containment. No page errors.');
+  console.log('PASS: compact pricing clipboard text, optional notes, average hours with blank/zero handling, collapsed details, price changes, mileage cost only, saved reload, selected fallback, fresh edits and desktop/mobile containment. No page errors.');
 } finally {
   await browser.close();
 }
