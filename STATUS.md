@@ -2,7 +2,7 @@
 
 ## Current operating handoff — 2026-10-21
 
-### One history, job cost primary — 2026-10-21 (local verified; commit and push approved)
+### One history, job cost primary — 2026-10-21 (pushed 5733c3d; Pages deploy 39675625514 succeeded; unified_history_check passed against PAGES_URL)
 
 - User clarification: timesheets were an early test. The job-cost export (all
   I&T) is the main history; its actual hours equal summed timesheets. Use the
