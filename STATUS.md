@@ -2,6 +2,40 @@
 
 ## Current operating handoff — 2026-10-20
 
+### Focused visual polish — 2026-10-20 (publication approved)
+
+- User requested a walkthrough and polish of the OMNI quote helper while
+  preserving its established design. Acceptance: retain the three-column layout,
+  expanded sections and validated renewal workflows; improve visual hierarchy,
+  helper-text readability, control consistency and keyboard accessibility.
+- src/index.css adds tinted disclosure headers with right-aligned chevrons,
+  separate date/average subtitles, flatter nested section cards, darker helper
+  text, 36px standard inputs and keyboard focus outlines. Compact inputs retain
+  their sizing. Light/dark themes and the existing section order remain intact.
+- Sidebar.tsx exposes the selected record and full truncated names; App.tsx
+  exposes active navigation state; ui.tsx adds segmented-control focus outlines;
+  RenewalWorkspace.tsx names the duplicate icon on mobile. CompanySection.tsx
+  corrects field hints: Company drives project name, Location drives SOW/email.
+  No storage, calculations, generated text or data migrations changed.
+- Verified: npm.cmd run typecheck, npm.cmd run lint, npm.cmd test (178 tests),
+  npm.cmd run build, npm.cmd run build -- --mode pages all exit0. Existing Vite
+  chunk-size warning remains. Isolated browser scripts/layout_check.mjs,
+  scripts/inline_history_check.mjs and scripts/renewal_handoff_check.mjs all
+  exit0 with no page errors. Layout checks cover390/768/1024/1280/1440px,
+  column containment, collapse/keyboard, dark mode, pricing and reload; workflow
+  checks cover confidential local history, copy/fallback, dates and mileage.
+- Reviewed desktop light/dark and mobile screenshots under artifacts/layout;
+  git diff --check passed. No user-profile data touched. No commit/push yet.
+- Production scripts/pages_check.mjs passed at4173/repository-path with no
+  page/request errors, including logos/favicon, linked pricing and saved reload.
+  Initial attempt exited1 at pages_check.mjs:17 (welcome-logo timeout): preview
+  used default mode against a Pages build. Restarting with
+  `npm.cmd run preview -- --mode pages --host 127.0.0.1` fixed asset serving;
+  unchanged smoke check reran exit0. No application change was needed.
+- User approved committing/pushing these improvements on2026-10-20. Next:
+  push to main, watch the automatic Pages deployment and run hosted
+  scripts/pages_check.mjs. Record the deployment result here.
+
 ### OMNI logo — 2026-10-20 (deployed and verified)
 
 - User requested Downloads/omni.png throughout the website. Copied unchanged to

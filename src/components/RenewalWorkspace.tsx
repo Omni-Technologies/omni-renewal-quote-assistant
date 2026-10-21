@@ -106,6 +106,7 @@ export function RenewalWorkspace({
             className="btn-secondary"
             onClick={onDuplicate}
             title="Duplicate for the next contract period"
+            aria-label="Duplicate renewal"
           >
             <CopyPlus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Duplicate</span>

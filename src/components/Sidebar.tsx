@@ -100,6 +100,8 @@ export function Sidebar({
                   <button
                     type="button"
                     onClick={() => onSelect(renewal.id)}
+                    aria-current={selected ? 'true' : undefined}
+                    title={[title, subtitle].filter(Boolean).join(' — ')}
                     className={
                       selected
                         ? 'w-full rounded-lg border border-brand-200 bg-brand-50/70 px-2.5 py-2 text-left dark:border-brand-500/30 dark:bg-brand-500/10'

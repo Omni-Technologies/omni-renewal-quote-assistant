@@ -254,7 +254,7 @@ export function Segmented<T extends string>({
             type="button"
             aria-pressed={active}
             className={cx(
-              'rounded-md px-2.5 py-1 text-[12px] font-semibold transition',
+              'min-w-0 rounded-md px-2.5 py-1 text-[12px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500',
               active
                 ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
                 : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200',

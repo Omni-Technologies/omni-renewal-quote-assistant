@@ -389,6 +389,7 @@ export default function App() {
           <div className="mr-1 hidden items-center gap-0.5 rounded-lg bg-white/10 p-0.5 sm:flex">
             <button
               type="button"
+              aria-pressed={view === 'renewals'}
               className={
                 view === 'renewals'
                   ? 'rounded-md bg-white/15 px-2.5 py-1 text-[12px] font-semibold text-white'
@@ -400,6 +401,7 @@ export default function App() {
             </button>
             <button
               type="button"
+              aria-pressed={view === 'history'}
               className={
                 view === 'history'
                   ? 'inline-flex items-center gap-1.5 rounded-md bg-white/15 px-2.5 py-1 text-[12px] font-semibold text-white'

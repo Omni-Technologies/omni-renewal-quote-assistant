@@ -22,6 +22,11 @@
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
+  :where(button, summary, a, input[type='checkbox']):focus-visible {
+    outline: 2px solid theme('colors.brand.500');
+    outline-offset: 3px;
+  }
+
   ::selection {
     @apply bg-brand-200 text-brand-950;
   }
@@ -69,7 +74,40 @@
   }
 
   .workspace-disclosure {
-    @apply cursor-pointer px-4 py-3 text-[13px] font-semibold text-slate-800 dark:text-slate-100;
+    @apply relative cursor-pointer list-none rounded-xl py-3 pl-4 pr-9 text-[13px] font-semibold text-slate-800 transition-colors hover:bg-slate-50 dark:text-slate-100 dark:hover:bg-slate-800/60;
+  }
+
+  .workspace-disclosure::-webkit-details-marker {
+    display: none;
+  }
+
+  .workspace-disclosure::after {
+    content: '';
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg);
+    opacity: 0.6;
+  }
+
+  details[open] > .workspace-disclosure {
+    @apply rounded-b-none border-b border-slate-200 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-800/40;
+  }
+
+  details[open] > .workspace-disclosure::after {
+    transform: rotate(45deg);
+  }
+
+  .workspace-disclosure > span {
+    @apply mt-0.5 block text-[11px] font-normal text-slate-500 dark:text-slate-400;
+  }
+
+  details.card > div > section.card {
+    @apply border-transparent shadow-none;
   }
 
   .card {
@@ -81,7 +119,7 @@
   }
 
   .hint {
-    @apply text-[11px] leading-snug text-slate-400 dark:text-slate-500;
+    @apply text-[11px] leading-relaxed text-slate-500 dark:text-slate-400;
   }
 
   .input {
@@ -90,6 +128,10 @@
 
   .input-sm {
     @apply px-2 py-1 text-[13px];
+  }
+
+  .input:not(.input-sm) {
+    min-height: 36px;
   }
 
   .textarea {

@@ -33,7 +33,7 @@ export function CompanySection({
       <div className="workspace-field-grid grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <Field
           label="Company name"
-          hint="Exact name used in Microsoft Teams."
+          hint="Teams company name; used in the D-Tools project name."
         >
           <TextInput
             value={company.companyName}
@@ -53,7 +53,7 @@ export function CompanySection({
         <Field
           label="Location name"
           required
-          hint="Used in the SOW and the D-Tools project name."
+          hint="Used in the SOW and proposal email."
         >
           <TextInput
             value={company.locationName}
