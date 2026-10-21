@@ -2,7 +2,43 @@
 
 ## Current operating handoff — 2026-10-21
 
-### East Madison Toyota history grouping — 2026-10-21 (local fix verified; publication approved)
+### Copy contract pricing for Teams — 2026-10-21 (local verified; publication approved)
+
+- User requested a one-click Contract pricing summary for Teams list comments,
+  then explicitly added historical average hours. Acceptance: copy the full
+  pricing block, signed dollar/percentage changes, historical average versus
+  proposed hours, and readable context/notes; use current values and handle
+  missing/zero values honestly; clipboard fallback and narrow layouts work.
+- PricingSection adds Copy pricing using existing clipboard/notification style.
+  pricingSummary.ts formats company/location/project, frequency/contract years,
+  previous/proposed annual prices, annual dollar and percentage change,
+  historical average hours with counted entry total, quoted hours, rate,
+  mileage cost/20% markup/customer charge and notes. Plain text with blank-line
+  sections is suitable for a Teams comment. Reuses calculateHistoryStats and
+  calculatePriceChange; blank history is ignored, explicit zero hours count.
+  No pricing calculations, persistence, schema or generated SOW changes.
+- PricingSection now receives notify from its sole RenewalWorkspace caller.
+  Copy includes collapsed details; on clipboard rejection a read-only summary
+  appears selected for Ctrl+C, following the app's existing fallback convention.
+- New scripts/pricing_copy_check.mjs verifies real clipboard contents including
+  historical average/entry count, blank/zero history, price increases/decreases/
+  zero/missing values, manual mileage markup, collapsed fields, fresh edits,
+  saved reload, selected fallback and desktop/mobile containment. Supports
+  PAGES_URL for hosted checks without customer data. README updated.
+- Final npm.cmd run typecheck, npm.cmd run lint, npm.cmd test (180 tests),
+  npm.cmd run build all exit0; existing bundle-size warning remains.
+  Set PLAYWRIGHT_MODULE and CHROMIUM_PATH as below, then run
+  node scripts/pricing_copy_check.mjs: exit0, no page errors. Existing
+  node scripts/layout_check.mjs passed all390–1440px, keyboard/dark/reload and
+  linked-pricing checks; inspected desktop-three-columns.png with new button.
+  Final diff reviewed; git diff --check passed. No user-profile data touched.
+- User approved commit/push for this feature on2026-10-21. Next: commit and
+  push to main, verify automatic Pages deployment, then run hosted
+  scripts/pricing_copy_check.mjs and scripts/pages_check.mjs with PAGES_URL.
+  Local app has the feature after refresh; hosted publication in progress.
+  This commit also includes the prior Toyota deployment evidence in STATUS.
+
+### East Madison Toyota history grouping — 2026-10-21 (deployed and verified)
 
 - Acceptance: all observed East Madison Toyota years appear in one history site
   despite renamed clients, including existing imports after refresh; unrelated
@@ -24,9 +60,17 @@
   Browser: set PLAYWRIGHT_MODULE and CHROMIUM_PATH as documented below, then
   node scripts/inline_history_check.mjs: exit0, no page errors. No user profile
   touched. Final diff reviewed and git diff --check passed.
-- User approved commit/push on2026-10-21. Next: commit and push to main,
-  then verify automatic Pages deployment and hosted smoke checks. Local app
-  at127.0.0.1:5173 uses the fix after refresh. Hosted publication in progress.
+- User approved commit/push on2026-10-21. Fix commit1fc26b2 pushed to main;
+  Pages run39637231304 succeeded, including hosted typecheck/lint/Pages build.
+  Hosted scripts/pages_check.mjs passed with PAGES_URL set to the hosted URL:
+  assets/logos/favicon, renewal creation, linked pricing and reload; zero errors.
+  Additional isolated hosted browser check imported synthetic Toyota records
+  for2023–2026 with both client names and the2025 parenthetical title: one
+  result contained all four projects before/after reload, no page errors.
+  No customer data sent to hosting and no user-profile data touched.
+  Refresh local or hosted app; existing imports regroup without reimport.
+  No remaining implementation/publication work. Deployment evidence recorded
+  locally in this STATUS update after the pushed fix.
 
 ### Focused visual polish — 2026-10-20 (deployed and verified)
 

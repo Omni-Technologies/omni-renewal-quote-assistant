@@ -1,5 +1,7 @@
-import { DollarSign } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ClipboardCopy, DollarSign } from 'lucide-react';
 import type { Renewal } from '../types';
+import { buildPricingSummary } from '../lib/pricingSummary';
 import { updateMileageCost, updateRenewalLabor, updateRenewalPricing } from '../lib/renewalInputs';
 import { calculatePriceChange, hasLowLaborRate } from '../lib/calculations';
 import {
@@ -12,11 +14,34 @@ import { Banner, Field, NumberInput, SectionCard, TextArea } from './ui';
 export function PricingSection({
   renewal,
   update,
+  notify,
 }: {
   renewal: Renewal;
   update: (updater: (renewal: Renewal) => Renewal) => void;
+  notify: (message: string, tone?: 'success' | 'danger' | 'info') => void;
 }) {
   const { pricing } = renewal;
+  const summary = buildPricingSummary(renewal);
+  const [showCopyFallback, setShowCopyFallback] = useState(false);
+  const textRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    if (showCopyFallback) {
+      textRef.current?.focus();
+      textRef.current?.select();
+    }
+  }, [showCopyFallback]);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(summary);
+      notify('Pricing summary copied — paste into your Teams list comment.');
+    } catch {
+      setShowCopyFallback(true);
+      textRef.current?.focus();
+      textRef.current?.select();
+      notify('Text selected — press Ctrl+C to copy, then paste into your Teams list comment.', 'info');
+    }
+  }
   const patch = (values: Partial<Renewal['pricing']>) =>
     update((current) => updateRenewalPricing(current, values));
 
@@ -37,6 +62,12 @@ export function PricingSection({
       icon={<DollarSign className="h-4 w-4" />}
       title="Contract pricing"
       description="Proposed annual price drives the SOW billing language."
+      actions={
+        <button type="button" className="btn-secondary" onClick={() => void copy()} title="Copy pricing for a Teams list comment">
+          <ClipboardCopy className="h-3.5 w-3.5" />
+          Copy pricing
+        </button>
+      }
     >
       <div className="workspace-field-grid grid grid-cols-1 items-end gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <Field
@@ -154,6 +185,13 @@ export function PricingSection({
         </Field>
       </div>
       </details>
+      {showCopyFallback ? (
+        <div className="mt-3">
+          <Field label="Pricing summary for Teams" hint="Press Ctrl+C to copy the selected text.">
+            <textarea ref={textRef} className="textarea" aria-label="Pricing summary for Teams" readOnly value={summary} rows={10} onFocus={(event) => event.currentTarget.select()} />
+          </Field>
+        </div>
+      ) : null}
       {lowRate ? (
         <div className="mt-3">
           <Banner severity="warning">

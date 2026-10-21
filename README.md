@@ -161,6 +161,12 @@ controls sit directly after the clause controls in the same scrolling flow.
    or Nurse Call and your greeting; defaults are Fire Alarm and Good Day.
    These selections only affect the email template and are saved per renewal.
 3. Enter previous / proposed annual price and labor rate (defaults to$90).
+   **Copy pricing** in Contract pricing copies a plain-text Teams list comment
+   with company/location/contract context, previous and proposed annual prices,
+   dollar and percentage changes, historical average hours with entry count,
+   quoted hours, labor rate, mileage cost/markup/
+   charge and pricing notes. It includes collapsed pricing details. If clipboard
+   access is blocked, the summary appears selected for Ctrl+C.
 4. Enter historical inspection hours. Use **Historical Hours** to import and
    apply actual D-Tools hours, or type them manually. Blank years are ignored,
    not counted as zero. The average and recommended whole hours are suggestions

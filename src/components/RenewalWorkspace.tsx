@@ -154,7 +154,7 @@ export function RenewalWorkspace({
               </details>
               <details className="card workspace-column" open>
                 <summary className="workspace-disclosure">Contract pricing</summary>
-                <div className="p-2"><PricingSection renewal={renewal} update={update} /></div>
+                <div className="p-2"><PricingSection renewal={renewal} update={update} notify={notify} /></div>
               </details>
               <details className="card workspace-column" open>
                 <summary className="workspace-disclosure">Historical hours & travel <span className="font-normal text-slate-500">Average {formatHours(history.averageHours)}</span></summary>
