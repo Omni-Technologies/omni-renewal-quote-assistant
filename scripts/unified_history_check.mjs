@@ -86,7 +86,8 @@ try {
   await onlySite.first().waitFor();
   await onlySite.click();
   for (const year of [2026, 2025, 2024, 2023]) await include(year).waitFor();
-  for (const number of ['26-1000', '25-1000', '24-1000']) assert.match(await row(number).innerText(), /Job cost/);
+  for (const number of ['26-1000', '25-1000', '24-1000']) assert.match(await row(number).innerText(), /D-Tools .* · start /);
+  await page.getByText('Budgeted vs actual hours (D-Tools job cost)').waitFor();
   const onlyHours = await applySelection(3);
   assert.deepEqual([...onlyHours].sort(), ['12', '16.5', '18'], 'Job-cost-only apply uses job-cost actual hours');
   assert.match(await page.locator('body').innerText(), /D-Tools job-cost actual hours/);
@@ -106,14 +107,14 @@ try {
   for (const year of [2026, 2025, 2024, 2023]) await include(year).waitFor();
   for (const year of [2026, 2025, 2024]) assert.equal(await include(year).isChecked(), true, `${year} selected by default`);
   assert.equal(await include(2023).isChecked(), false, 'Older year visible but unselected');
-  assert.match(await row('24-1000').innerText(), /Job cost/);
-  assert.doesNotMatch(await row('24-1000').innerText(), /timesheet/i);
-  assert.match(await row('23-1000').innerText(), /Job cost/);
-  assert.match(await row('25-1000').innerText(), /Job cost · timesheet verified/);
-  assert.match(await row('26-1000').innerText(), /Job cost · timesheet differs/);
-  assert.match(await row('26-1000').innerText(), /timesheet 17/);
-  assert.match(await row('25-1000').innerText(), /14/);
-  await page.getByText(/Selected job cost: avg budgeted/).waitFor();
+  assert.match(await row('24-1000').innerText(), /D-Tools .* · start /);
+  assert.match(await row('23-1000').innerText(), /D-Tools .* · start /);
+  // Original layout: no source/budgeted columns; job-cost hours replace timesheet totals.
+  assert.equal(await page.getByRole('columnheader', { name: 'Source', exact: true }).count(), 0);
+  assert.match(await row('26-1000').innerText(), /\t18 h\t/);
+  assert.doesNotMatch(await row('26-1000').innerText(), /timesheet/i);
+  assert.match(await row('25-1000').innerText(), /\t16\.5 h\t/);
+  await page.getByText('Budgeted vs actual hours (D-Tools job cost)').waitFor();
 
   await include(2023).click();
   await page.waitForFunction((label) => document.querySelector(`input[aria-label="${label}"]`)?.checked, `Include ${NAME(2023)} in the average`);

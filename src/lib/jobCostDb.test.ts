@@ -46,6 +46,11 @@ function dataset(id: string): JobCostDataset {
   };
 }
 
+function renewal(id: string, companyName: string, updatedAt = 1_700_000_000_000) {
+  const base = makeRenewal();
+  return { ...base, id, updatedAt, company: { ...base.company, companyName } };
+}
+
 beforeEach(async () => {
   await db.renewals.clear();
   await db.jobCostDatasets.clear();
@@ -94,6 +99,33 @@ describe('job-cost persistence', () => {
     await replaceJobCost(dataset('jc-1'), [record('jc-1')]);
     await restoreBackupData(parsed);
     expect((await loadJobCost())?.projects).toHaveLength(1);
+  });
+
+  it('keeps the current browser job-cost history when the backup has older job cost', async () => {
+    await replaceJobCost(dataset('jc-1'), [record('jc-1')]);
+    const parsed = parseBackupJson(JSON.stringify(await exportBackupData()));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    await replaceJobCost(dataset('jc-2'), [record('jc-2', { actualHours: 18 })]);
+    expect((await restoreBackupData(parsed)).jobCostAdded).toBe(false);
+    expect(await loadJobCost()).toEqual({ dataset: dataset('jc-2'), projects: [record('jc-2', { actualHours: 18 })] });
+    expect(await db.jobCostProjects.count()).toBe(1);
+  });
+
+  it('adds only missing renewals and never overwrites or removes ones made here', async () => {
+    const shared = renewal('shared', 'Old Co', 1);
+    const onlyInBackup = renewal('backup-only', 'Backup Co');
+    const parsed = parseBackupJson(JSON.stringify(buildBackup([shared, onlyInBackup])));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const edited = renewal('shared', 'Edited Here', 5);
+    const madeHere = renewal('made-here', 'New Here');
+    await db.renewals.bulkPut([edited, madeHere]);
+    expect(await restoreBackupData(parsed)).toMatchObject({ added: 1, kept: 1, firstAddedId: 'backup-only' });
+    expect(await db.renewals.get('shared')).toEqual(edited);
+    expect(await db.renewals.get('made-here')).toEqual(madeHere);
+    expect((await db.renewals.get('backup-only'))?.company.companyName).toBe('Backup Co');
+    expect(await db.renewals.count()).toBe(3);
   });
 
   it('rejects a backup with malformed job-cost rows', async () => {

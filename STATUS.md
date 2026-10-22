@@ -2,6 +2,37 @@
 
 ## Current operating handoff — 2026-10-21
 
+### Original look restored; restore merges instead of overwriting — 2026-10-21 (local, not yet pushed)
+
+- User: keep the unified job-cost backend but restore the previous visual
+  layout ("i only wanted this to be the backend work"). HistoricalHours and
+  LaborSection are back to the original columns/text; the per-site
+  "Budgeted vs actual hours (D-Tools job cost)" table shows budgeted hours.
+  Job-cost-only rows still show "D-Tools {status} · start {date}". The
+  Source/Budgeted columns and chips described below were removed.
+- User: importing a backup at work must not overwrite renewals already made
+  there, only add what's missing. restoreBackupData (db.ts) now merges:
+  - renewals: only ids missing here are written; existing ones are untouched;
+  - timesheet and job-cost datasets: added only when the browser has none;
+  - decisions: only missing keys are added.
+  It returns a RestoreSummary, which App.tsx uses for the toast "Added N
+  missing renewals…; kept M…" and to decide history reloads. The dialog text
+  was updated to match.
+- Tests: new merge tests in jobCostDb.test.ts/dtoolsDb.test.ts; new
+  scripts/restore_merge_check.mjs (edit/delete/add after export, then restore).
+  browser_audit.mjs restore expectation updated, but that script still fails
+  earlier at line 136 (quoted hours 97.98 vs 17). That failure comes from the
+  validated price-to-hours linkage and is a stale pre-existing expectation; it
+  is unrelated to this change.
+- harness-reviewer: no data-loss/transaction bugs. Fixed both low findings:
+  restore no longer jumps the selection when nothing was added (selects the
+  first added renewal only), and `kept` counts unique ids. By design: a
+  renewal deleted here comes back on restore (it is "missing"); a newer
+  dataset in a backup is ignored when this browser already has history.
+- Verified: typecheck, lint, 212 tests, build; restore_merge_check,
+  unified_history_check, jobcost_check, inline_history_check, layout_check and
+  pricing_copy_check pass locally.
+
 ### One history, job cost primary — 2026-10-21 (pushed 5733c3d; Pages deploy 39675625514 succeeded; unified_history_check passed against PAGES_URL)
 
 - User clarification: timesheets were an early test. The job-cost export (all

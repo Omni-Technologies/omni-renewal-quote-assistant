@@ -334,17 +334,20 @@ export default function App() {
     setRestoreBusy(true);
     try {
       const restored = await runAfterSave(saveQueue, async () => {
-        await restoreBackupData(preview.backup);
+        const summary = await restoreBackupData(preview.backup);
         const rows = await listRenewals();
         setRenewals(rows);
-        if (preview.backup.dtools) setHistoryVersion((version) => version + 1);
-        if (preview.backup.dtools || preview.backup.jobCost) await reloadHistoryContext();
-        setSelectedId(preview.backup.renewals[0]?.id ?? rows[0]?.id ?? null);
-        setQuery('');
+        if (summary.dtoolsAdded || summary.decisionsAdded) setHistoryVersion((version) => version + 1);
+        if (summary.dtoolsAdded || summary.decisionsAdded || summary.jobCostAdded) await reloadHistoryContext();
+        if (summary.firstAddedId) {
+          setSelectedId(summary.firstAddedId);
+          setQuery('');
+        }
         setSaveState('saved');
         setLastSaved(Date.now());
         notify(
-          `Restored ${preview.backup.renewals.length} renewal${preview.backup.renewals.length === 1 ? '' : 's'} from backup.`,
+          `Added ${summary.added} missing renewal${summary.added === 1 ? '' : 's'} from backup` +
+            (summary.kept ? `; kept ${summary.kept} already in this browser unchanged.` : '.'),
         );
         setRestorePreview(null);
       });
@@ -644,17 +647,17 @@ export default function App() {
               ) : null}
               {restorePreview.backup.dtools ? (
                 <p className="text-[12px] text-slate-500 dark:text-slate-400">
-                  The current D-Tools history and decisions will be replaced with {restorePreview.backup.dtools.rows.length} timesheet rows and {restorePreview.backup.dtools.decisions.length} manual decisions from this backup.
+                  Its {restorePreview.backup.dtools.rows.length} timesheet rows are added only if this browser has no timesheet history; its {restorePreview.backup.dtools.decisions.length} manual decisions are added only where this browser has none for that project.
                 </p>
               ) : null}
               {restorePreview.backup.jobCost ? (
                 <p className="text-[12px] text-slate-500 dark:text-slate-400">
-                  The current D-Tools job-cost history will be replaced with {restorePreview.backup.jobCost.projects.length} job-cost projects from this backup.
+                  Its {restorePreview.backup.jobCost.projects.length} job-cost projects are added only if this browser has no job-cost history.
                 </p>
               ) : null}
               <p className="text-[12px] text-slate-500 dark:text-slate-400">
-                Records with the same ID are updated; other saved renewals are left in
-                place.
+                Only renewals missing from this browser are added. Renewals already here,
+                including ones changed since this backup, are never overwritten or removed.
               </p>
             </div>
           ) : null

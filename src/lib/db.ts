@@ -212,37 +212,58 @@ export async function exportBackupData(): Promise<BackupFile> {
   });
 }
 
+export interface RestoreSummary {
+  /** Renewals added because this browser had no renewal with that id. */
+  added: number;
+  /** Backup renewals skipped because this browser already has that id. */
+  kept: number;
+  /** First added renewal id, so the app can show it; null when nothing was added. */
+  firstAddedId: string | null;
+  /** True when this browser had no timesheet history and the backup's was added. */
+  dtoolsAdded: boolean;
+  /** True when this browser had no job-cost history and the backup's was added. */
+  jobCostAdded: boolean;
+  decisionsAdded: number;
+}
+
 /**
- * Renewals are merged by id. Timesheet history is replaced only when the
- * backup carries it, and job cost likewise, so restoring an older backup never
- * erases data it did not contain.
+ * Merges a backup into this browser without removing or overwriting anything.
+ * Only renewals and manual decisions whose id is missing here are added, and a
+ * backup's timesheet or job-cost history is added only when this browser has
+ * none of that kind, so work done here since the backup always survives.
  */
 export async function restoreBackupData(
   backup: Extract<BackupParseResult, { ok: true }>,
-): Promise<void> {
+): Promise<RestoreSummary> {
   await pendingDecisionWrite;
-  await db.transaction('rw', [
+  return db.transaction('rw', [
     db.renewals, db.dtoolsDatasets, db.dtoolsRows, db.dtoolsDecisions, db.jobCostDatasets, db.jobCostProjects,
   ], async () => {
-    for (const renewal of backup.renewals) {
-      await db.renewals.put(renewal);
-    }
+    const summary: RestoreSummary = { added: 0, kept: 0, firstAddedId: null, dtoolsAdded: false, jobCostAdded: false, decisionsAdded: 0 };
+    const existing = new Set(await db.renewals.toCollection().primaryKeys());
+    const missing = backup.renewals.filter((renewal) => !existing.has(renewal.id));
+    summary.added = new Set(missing.map((renewal) => renewal.id)).size;
+    summary.kept = new Set(backup.renewals.filter((renewal) => existing.has(renewal.id)).map((renewal) => renewal.id)).size;
+    summary.firstAddedId = missing[0]?.id ?? null;
+    if (missing.length) await db.renewals.bulkPut(missing);
     if (backup.dtools) {
       const { dataset, rows, decisions } = backup.dtools;
-      await db.dtoolsRows.clear();
-      await db.dtoolsDatasets.clear();
-      await db.dtoolsDecisions.clear();
-      if (dataset) await db.dtoolsDatasets.put(dataset);
-      if (rows.length) await db.dtoolsRows.bulkPut(rows);
-      if (decisions.length) await db.dtoolsDecisions.bulkPut(decisions);
+      if (dataset && await db.dtoolsDatasets.count() === 0) {
+        await db.dtoolsDatasets.add(dataset);
+        if (rows.length) await db.dtoolsRows.bulkPut(rows);
+        summary.dtoolsAdded = true;
+      }
+      const decided = new Set(await db.dtoolsDecisions.toCollection().primaryKeys());
+      const newDecisions = decisions.filter((decision) => !decided.has(decision.key));
+      if (newDecisions.length) await db.dtoolsDecisions.bulkPut(newDecisions);
+      summary.decisionsAdded = new Set(newDecisions.map((decision) => decision.key)).size;
     }
-    if (backup.jobCost) {
-      const { dataset, projects } = backup.jobCost;
-      await db.jobCostProjects.clear();
-      await db.jobCostDatasets.clear();
-      if (dataset) await db.jobCostDatasets.put(dataset);
-      if (projects.length) await db.jobCostProjects.bulkPut(projects);
+    if (backup.jobCost?.dataset && await db.jobCostDatasets.count() === 0) {
+      await db.jobCostDatasets.add(backup.jobCost.dataset);
+      if (backup.jobCost.projects.length) await db.jobCostProjects.bulkPut(backup.jobCost.projects);
+      summary.jobCostAdded = true;
     }
+    return summary;
   });
 }
 

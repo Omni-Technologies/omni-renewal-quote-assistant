@@ -72,14 +72,18 @@ browser profile that opened the app. Nothing is sent anywhere.
   `omni-renewal-backup-YYYY-MM-DD.json`. Do this regularly; it is the only
   backup mechanism.
 - **Restore** validates the file, shows a confirmation with record count and
-  export date, then upserts records by ID. Other saved renewals are left in
-  place. Structurally incomplete records — including an id-only record that
-  matches an existing renewal — are rejected before any database write.
+  export date, then **adds only what this browser is missing**. A renewal whose
+  ID already exists here is kept exactly as it is, even if it changed after the
+  backup; renewals made here are never removed. Structurally incomplete
+  records — including an id-only record — are rejected before any database
+  write. The message says how many were added and how many were kept.
 - Invalid JSON, wrong backup format, unsupported versions, and unusable records
   are rejected or skipped with a visible message.
-- Backups include the timesheet and job-cost history. Restoring an older backup
-  without job-cost history, or one made before any job-cost import, leaves the
-  current job-cost history in place.
+- Backups include the timesheet and job-cost history. A backup's timesheet or
+  job-cost history is added only when this browser has none of that kind;
+  otherwise this browser's history stays. Manual history decisions are added
+  only for projects with no decision here. To update history, re-import the
+  D-Tools exports instead.
 
 The JSON contains confidential client data. Store backups on `N:` or another
 approved internal location, not in public cloud storage.

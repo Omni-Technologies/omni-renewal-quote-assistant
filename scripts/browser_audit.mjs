@@ -180,7 +180,7 @@ try {
     await label('Restore backup file').setInputFiles(backupPath);
     await page.getByText('Restore data from backup?', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Restore backup', exact: true }).last().click();
-    await page.getByText(/Restored 1 renewal/).waitFor({ timeout: 30000 });
+    await page.getByText(/Added 0 missing renewals from backup; kept 1 already in this browser/).waitFor({ timeout: 30000 });
     assert.equal((await renewal()).labor.importSummary.projects[0].entries.length, backup.renewals[0].labor.importSummary.projects[0].entries.length);
   });
   await step('Browser restart retains source history, decisions, and the saved renewal', async () => {

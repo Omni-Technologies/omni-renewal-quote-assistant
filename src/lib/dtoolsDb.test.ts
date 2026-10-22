@@ -205,9 +205,34 @@ describe('D-Tools history persistence', () => {
     if (!parsed.ok) return;
     expect(parsed.dtools?.rows).toHaveLength(3);
     await db.dtoolsRows.clear();
+    await db.dtoolsDatasets.clear();
     await db.dtoolsDecisions.clear();
     await restoreBackupData(parsed);
     expect(await loadDtoolsHistory()).toEqual({ dataset: first.dataset, rows: first.rows, decisions: [decision] });
+  });
+
+  it('keeps the current browser timesheet history and decisions, adding only missing decisions', async () => {
+    const first = parse('dataset-1');
+    await replaceDtoolsHistory(first.dataset, first.rows);
+    const projects = buildProjects(first.rows);
+    const kept = { ...defaultDecision(projects[0]), action: 'exclude' as const, note: 'Old', updatedAt: 1 };
+    await saveDtoolsDecision(kept);
+    const parsed = parseBackupJson(JSON.stringify(await exportBackupData()));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok || !parsed.dtools) return;
+    const newer = parse('dataset-2');
+    await replaceDtoolsHistory(newer.dataset, newer.rows);
+    const changed = { ...kept, action: 'include' as const, note: 'Changed here', updatedAt: 2 };
+    await saveDtoolsDecision(changed);
+    const missing = { ...defaultDecision(projects[0]), key: 'missing-key', updatedAt: 3 };
+    parsed.dtools.decisions.push(missing);
+    const summary = await restoreBackupData(parsed);
+    expect(summary).toMatchObject({ dtoolsAdded: false, decisionsAdded: 1 });
+    const loaded = await loadDtoolsHistory();
+    expect(loaded?.dataset.id).toBe('dataset-2');
+    expect(await db.dtoolsDatasets.count()).toBe(1);
+    expect(loaded?.decisions.find((decision) => decision.key === kept.key)).toEqual(changed);
+    expect(loaded?.decisions.find((decision) => decision.key === 'missing-key')).toEqual(missing);
   });
 
   it('rejects malformed D-Tools backup data before changing any saved data', async () => {

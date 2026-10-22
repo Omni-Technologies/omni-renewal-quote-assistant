@@ -184,7 +184,7 @@ export function LaborSection({
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.07em] text-emerald-700 dark:text-emerald-300">
-                Actual hours imported from D-Tools
+                Actual approved hours imported from D-Tools
               </div>
               <div className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">
                 {labor.importSummary.fileName} · imported{' '}
@@ -224,8 +224,7 @@ export function LaborSection({
             ))}
           </div>
           <p className="mt-1.5 text-[10.5px] text-emerald-800/80 dark:text-emerald-200/70">
-            These are actual hours (D-Tools job cost, timesheet rows where job cost has none), not
-            originally quoted/bid hours. Quoted hours stay
+            These are actual timesheet hours, not originally quoted/bid hours. Quoted hours stay
             separate in Contract pricing above.
           </p>
         </div>
