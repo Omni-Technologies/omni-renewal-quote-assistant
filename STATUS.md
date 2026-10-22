@@ -1,6 +1,38 @@
 # STATUS — OMNI Renewal Quote Assistant
 
-## Current operating handoff — 2026-10-21
+## Current operating handoff — 2026-10-22
+
+### Online version on quotes.drewcassidy.dev with Cloudflare D1 — 2026-10-22 (deployed, committed, live data loaded)
+
+- User: one accurate history database at drewcassidy.dev, behind a login like
+  the chat site, with no export/import. 46a765d was pushed first.
+- Built: `vite build --mode cloud` switches `db.ts` to `src/lib/cloudStore.ts`
+  (`/api/*`). The Worker `worker/index.ts` serves `dist` and the API on D1
+  `omni-renewal-quote` (id 7eb85a3c-…, `migrations/0001_init.sql` applied
+  remotely). Restore stays merge-only on the server (INSERT OR IGNORE).
+  Non-JSON writes get 415 (CSRF guard).
+- Auth: the Access app "Quote assistant" (id f035b803-…) on
+  quotes.drewcassidy.dev reuses the "Owner only" policy, which allows
+  **67.nmh.69@gmail.com** (not drewcassidy27). The team is
+  drewcassidy.cloudflareaccess.com. The Worker verifies the RS256 JWT
+  (aud/iss/exp/email) and fails closed. workers.dev is off (404).
+- Deployed version 87e05fc5. `EXPECT_LOCKED=1 API_URL=https://quotes.drewcassidy.dev
+  node scripts/cloud_api_check.mjs` passed (every route returns a 302 to the
+  Access login; a forged JWT header also gets a 302).
+- Local: typecheck, lint, 212 tests pass. `cloud_api_check.mjs` against
+  `npm run dev:cloud` passes, and so does `CLOUD=1 restore_merge_check.mjs`
+  after wiping local D1.
+- Known limits from harness-reviewer: (2) last-write-wins across tabs and
+  devices; a stale tab can bring back a deleted renewal (documented in the
+  README). (7) malformed requests return 500, not 400.
+- Live data: the work backup (2026-10-22, 9 renewals) was restored. It was a
+  superset of the home backup (6 renewals, all identical or older), so the
+  home file was not restored. The server holds 9 renewals, 6,380 timesheet
+  rows (Oct 19 CSV), 2 decisions, and 1,951 job-cost projects, imported from
+  the two Oct 21 "Project Job Cost (By Phase)" workbooks. Neither backup had
+  job cost. The real ~9.7 MB restore worked within D1 limits (finding 3).
+- Next: the user works only on the online site. Optional: return 400 for
+  malformed requests (finding 7).
 
 ### Original look restored; restore merges instead of overwriting — 2026-10-21 (local, not yet pushed)
 

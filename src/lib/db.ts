@@ -10,6 +10,8 @@ import type {
 } from '../types';
 import { normalizeRenewal, validateBackupRenewal } from './model';
 import { parseDurationHours, parseWorkDate, refreshDtoolsHistory } from './dtools';
+import * as cloud from './cloudStore';
+import { cloudMode } from './cloudStore';
 
 export class OmniDatabase extends Dexie {
   renewals!: Table<Renewal, string>;
@@ -36,12 +38,15 @@ export class OmniDatabase extends Dexie {
   }
 }
 
-/** All client data stays in this browser profile's IndexedDB. */
+/**
+ * Local builds keep all client data in this browser profile's IndexedDB. The
+ * hosted build (cloudMode) reads and writes the shared online database instead.
+ */
 export const db = new OmniDatabase();
 let pendingDecisionWrite: Promise<unknown> = Promise.resolve();
 
 export async function listRenewals(): Promise<Renewal[]> {
-  const rows = await db.renewals.toArray();
+  const rows = cloudMode ? await cloud.listCloudRenewals() : await db.renewals.toArray();
   return rows
     .map((row) => normalizeRenewal(row))
     .filter((row): row is Renewal => row !== null)
@@ -49,14 +54,17 @@ export async function listRenewals(): Promise<Renewal[]> {
 }
 
 export async function saveRenewal(renewal: Renewal): Promise<void> {
+  if (cloudMode) return cloud.putCloudRenewal(renewal);
   await db.renewals.put(renewal);
 }
 
 export async function deleteRenewal(id: string): Promise<void> {
+  if (cloudMode) return cloud.deleteCloudRenewal(id);
   await db.renewals.delete(id);
 }
 
 export async function replaceRenewals(renewals: readonly Renewal[]): Promise<void> {
+  if (cloudMode) return cloud.putCloudRenewals(renewals);
   await db.transaction('rw', db.renewals, async () => {
     for (const renewal of renewals) {
       await db.renewals.put(renewal);
@@ -75,6 +83,12 @@ export interface DtoolsStoreSnapshot {
 }
 
 export async function loadDtoolsHistory(): Promise<DtoolsStoreSnapshot | null> {
+  if (cloudMode) {
+    const [history, decisions] = await Promise.all([cloud.getCloudTimesheets(), cloud.listCloudDecisions()]);
+    if (!history) return null;
+    const refreshed = refreshDtoolsHistory(history.dataset, history.items);
+    return { dataset: refreshed.dataset, rows: refreshed.rows, decisions };
+  }
   return db.transaction('r', db.dtoolsDatasets, db.dtoolsRows, db.dtoolsDecisions, async () => {
     const dataset = await db.dtoolsDatasets.orderBy('importedAt').last();
     if (!dataset) return null;
@@ -99,6 +113,7 @@ export async function replaceDtoolsHistory(
   if (rows.length === 0 || rows.some((row) => row.datasetId !== dataset.id)) {
     throw new Error('The timesheet has no usable rows or contains rows from another import.');
   }
+  if (cloudMode) return cloud.putCloudTimesheets(dataset, rows);
   await db.transaction(
     'rw',
     db.dtoolsDatasets,
@@ -115,13 +130,13 @@ export async function replaceDtoolsHistory(
 export async function saveDtoolsDecision(
   decision: DtoolsProjectDecision,
 ): Promise<void> {
-  const write = pendingDecisionWrite.catch(() => {}).then(() => db.dtoolsDecisions.put(decision));
+  const write = pendingDecisionWrite.catch(() => {}).then(async () => { await (cloudMode ? cloud.putCloudDecision(decision) : db.dtoolsDecisions.put(decision)); });
   pendingDecisionWrite = write;
   await write;
 }
 
 export async function resetDtoolsDecision(key: string): Promise<void> {
-  const write = pendingDecisionWrite.catch(() => {}).then(() => db.dtoolsDecisions.delete(key));
+  const write = pendingDecisionWrite.catch(() => {}).then(() => cloudMode ? cloud.deleteCloudDecision(key) : db.dtoolsDecisions.delete(key));
   pendingDecisionWrite = write;
   await write;
 }
@@ -136,6 +151,10 @@ export interface JobCostStoreSnapshot {
 }
 
 export async function loadJobCost(): Promise<JobCostStoreSnapshot | null> {
+  if (cloudMode) {
+    const history = await cloud.getCloudJobCost();
+    return history && { dataset: history.dataset, projects: history.items };
+  }
   return db.transaction('r', db.jobCostDatasets, db.jobCostProjects, async () => {
     const dataset = await db.jobCostDatasets.orderBy('importedAt').last();
     if (!dataset) return null;
@@ -159,6 +178,7 @@ export async function replaceJobCost(
   ) {
     throw new Error('The job-cost import has no projects or contains projects from another import.');
   }
+  if (cloudMode) return cloud.putCloudJobCost(dataset, projects);
   await db.transaction('rw', db.jobCostDatasets, db.jobCostProjects, async () => {
     await db.jobCostProjects.clear();
     await db.jobCostDatasets.clear();
@@ -185,6 +205,17 @@ export function buildBackup(
 
 export async function exportBackupData(): Promise<BackupFile> {
   await pendingDecisionWrite;
+  if (cloudMode) {
+    const [renewals, dtools, jobCost] = await Promise.all([listRenewals(), loadDtoolsHistory(), loadJobCost()]);
+    return buildBackup(renewals, {
+      dataset: dtools?.dataset ?? null,
+      rows: dtools?.rows ?? [],
+      decisions: dtools?.decisions ?? await cloud.listCloudDecisions(),
+    }, {
+      dataset: jobCost?.dataset ?? null,
+      projects: jobCost?.projects ?? [],
+    });
+  }
   return db.transaction('r', [
     db.renewals, db.dtoolsDatasets, db.dtoolsRows, db.dtoolsDecisions, db.jobCostDatasets, db.jobCostProjects,
   ], async () => {
@@ -236,6 +267,13 @@ export async function restoreBackupData(
   backup: Extract<BackupParseResult, { ok: true }>,
 ): Promise<RestoreSummary> {
   await pendingDecisionWrite;
+  if (cloudMode) {
+    return cloud.restoreCloudBackup<RestoreSummary>({
+      renewals: backup.renewals,
+      dtools: backup.dtools,
+      jobCost: backup.jobCost,
+    });
+  }
   return db.transaction('rw', [
     db.renewals, db.dtoolsDatasets, db.dtoolsRows, db.dtoolsDecisions, db.jobCostDatasets, db.jobCostProjects,
   ], async () => {

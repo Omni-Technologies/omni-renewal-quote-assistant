@@ -2,6 +2,7 @@ import { HardDrive, Plus, Search } from 'lucide-react';
 import type { Renewal } from '../types';
 import { timeAgo } from '../lib/format';
 import { StatusBadge } from './ui';
+import { cloudMode } from '../lib/cloudStore';
 
 export function Sidebar({
   renewals,
@@ -140,8 +141,9 @@ export function Sidebar({
         <div className="flex items-start gap-2 text-[10.5px] leading-snug text-slate-400 dark:text-slate-500">
           <HardDrive className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>
-            Saved locally in this browser. No cloud, account, or telemetry. Export a JSON
-            backup regularly.
+            {cloudMode
+              ? 'Saved to your private online database. Every signed-in device sees the same data.'
+              : 'Saved locally in this browser. No cloud, account, or telemetry. Export a JSON backup regularly.'}
           </span>
         </div>
       </div>

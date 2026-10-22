@@ -56,6 +56,7 @@ import { invalidateHistoryContext, useHistoryContext } from '../lib/historyConte
 import { buildUnifiedHistory } from '../lib/unifiedHistory';
 import { jobCostForSite } from '../lib/jobCost';
 import { JobCostImportPanel, JobCostTable } from './JobCostHistory';
+import { cloudMode, storeName } from '../lib/cloudStore';
 import {
   Banner,
   ConfirmDialog,
@@ -141,7 +142,7 @@ export function HistoricalHours({
       })
       .catch((error) => {
         console.error('Historical hours load failed', error);
-        notify('Could not read the imported D-Tools history from this browser.', 'danger');
+        notify(`Could not read the imported D-Tools history from ${storeName}.`, 'danger');
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -802,7 +803,9 @@ function ImportArea({
           Import the approved D-Tools timesheet export
         </h2>
         <p className="mt-1 max-w-xl text-[12px] leading-relaxed text-slate-500 dark:text-slate-400">
-          Drag the CSV or Excel export here, or choose a file. Everything stays in this browser.
+          Drag the CSV or Excel export here, or choose a file. {cloudMode
+            ? 'It is saved to your private online database.'
+            : 'Everything stays in this browser.'}
           The export columns Approved, Date, Resource, Client Name, Project Name, Project Number,
           Name, Number and Duration are required.
         </p>

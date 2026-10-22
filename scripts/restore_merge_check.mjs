@@ -14,7 +14,10 @@ const errors = [];
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 page.on('pageerror', (error) => errors.push(error.message));
 const field = (name) => page.getByLabel(name, { exact: true });
-const companies = () => page.evaluate(() => new Promise((resolve, reject) => {
+// CLOUD=1 checks the hosted build on `npm run dev:cloud` (empty local D1), reading the API.
+const companies = () => process.env.CLOUD ? page.evaluate(async () =>
+  (await (await fetch('/api/renewals')).json()).map((renewal) => renewal.company.companyName).sort(),
+) : page.evaluate(() => new Promise((resolve, reject) => {
   const open = indexedDB.open('omni-renewal-quote');
   open.onerror = () => reject(open.error);
   open.onsuccess = () => {
@@ -22,13 +25,27 @@ const companies = () => page.evaluate(() => new Promise((resolve, reject) => {
     request.onsuccess = () => resolve(request.result.map((renewal) => renewal.company.companyName).sort());
   };
 }));
-async function newRenewal(name) {
-  await page.getByRole('button', { name: 'New Renewal', exact: true }).click();
+// Waits on stored state: cloud creates and saves take a network round trip.
+async function until(check) {
+  for (let i = 0; i < 100; i += 1) {
+    if (await check()) return;
+    await page.waitForTimeout(100);
+  }
+  throw new Error('Timed out waiting for saved state');
+}
+async function rename(name) {
   await field('Company name').fill(name);
-  await page.getByText(/^Saved \d/).waitFor();
+  await until(async () => (await companies()).includes(name));
+}
+async function newRenewal(name) {
+  const count = (await companies()).length;
+  await page.getByRole('button', { name: 'New Renewal', exact: true }).click();
+  await until(async () => (await companies()).length === count + 1);
+  await until(async () => (await field('Company name').inputValue()) === '');
+  await rename(name);
 }
 try {
-  await page.goto(process.env.PAGES_URL || 'http://127.0.0.1:5173');
+  await page.goto(process.env.PAGES_URL || (process.env.CLOUD ? 'http://127.0.0.1:8799' : 'http://127.0.0.1:5173'));
   await newRenewal('Backup Only Co');
   await newRenewal('Shared Co');
   const [download] = await Promise.all([
@@ -39,8 +56,7 @@ try {
   await download.saveAs(backupPath);
 
   // Work done in this browser after the backup: edit one, delete one, add one.
-  await field('Company name').fill('Shared Co edited here');
-  await page.getByText(/^Saved \d/).waitFor();
+  await rename('Shared Co edited here');
   await newRenewal('Made Here Co');
   assert.deepEqual(await companies(), ['Backup Only Co', 'Made Here Co', 'Shared Co edited here']);
   await page.getByText('Backup Only Co').first().click();
@@ -53,7 +69,7 @@ try {
   await page.getByText('Restore data from backup?', { exact: true }).waitFor();
   await page.getByText(/never overwritten or removed/).waitFor();
   await page.getByRole('button', { name: 'Restore backup', exact: true }).last().click();
-  await page.getByText(/Added 1 missing renewal from backup; kept 1 already in this browser unchanged/).waitFor();
+  await page.getByText(/Added 1 missing renewal from backup; kept 1 already in (this browser|the online database) unchanged/).waitFor();
   assert.deepEqual(await companies(), ['Backup Only Co', 'Made Here Co', 'Shared Co edited here']);
   await page.reload();
   await field('Company name').waitFor();

@@ -36,3 +36,7 @@ artifacts/
 *.njsproj
 *.sln
 *.sw?
+
+# Wrangler local state and local-only settings
+.wrangler/
+.dev.vars

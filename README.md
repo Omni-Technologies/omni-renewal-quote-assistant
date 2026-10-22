@@ -12,8 +12,9 @@ It replaces the manual Teams + D-Tools information hunt with one workspace:
 - Per-renewal status, 21-step renewal process checklist, autosave
 - JSON export / restore
 
-No cloud account, paid API, AI call, analytics, or telemetry. All client data
-stays in this browser profile on this PC.
+No paid API, AI call, analytics, or telemetry. The local and GitHub Pages
+builds keep all client data in the browser profile. The online version
+(below) keeps it in one private Cloudflare D1 database behind a login.
 
 Customer CSV/Excel exports, backups, screenshots and browser audit output are
 excluded from Git. Tests that read the local timesheet export or
@@ -29,6 +30,28 @@ workflow builds the app with `npm run build -- --mode pages` and publishes only
 `dist`, with assets under `/omni-renewal-quote-assistant/`.
 Data remains in each browser's IndexedDB; it does not sync between computers.
 Use Export/Restore to transfer renewals and import timesheets separately at work.
+
+### Online version: one shared database
+
+**https://quotes.drewcassidy.dev** is the same app, but renewals, history and
+merge decisions are kept in the Cloudflare D1 database `omni-renewal-quote`.
+Every computer sees the same data, with no export/import.
+
+- Cloudflare Access protects it with the app "Quote assistant", which reuses the
+  chat site's **Owner only** policy (sign in as 67.nmh.69@gmail.com). The
+  Worker (`worker/index.ts`) also checks the Access token and that email. It
+  refuses every API call if `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` or
+  `ALLOWED_EMAIL` in `wrangler.jsonc` is missing.
+- Deploy with `npm run deploy:cloud`. It builds with Vite mode `cloud`, applies
+  D1 migrations, then runs `wrangler deploy`. workers.dev and preview URLs
+  are off, so the login cannot be skipped.
+- Local test with `npm run dev:cloud` (http://127.0.0.1:8799, an empty local D1
+  database, login bypass via `.dev.vars` on loopback only).
+- Moving existing data in: open the online site, then **Restore** each
+  browser's backup. Restore only adds what is missing.
+- Use one tab at a time. Saves are last-write-wins, so an older tab left open
+  can overwrite a newer edit, or bring back a renewal that was deleted
+  elsewhere. Reload after working on another computer.
 
 ```powershell
 cd E:\Projects\omni-renewal-quote-assistant

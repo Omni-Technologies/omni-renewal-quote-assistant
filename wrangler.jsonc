@@ -1,0 +1,34 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "omni-renewal-quote",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  // Only the Access-protected custom domain serves this app; the public
+  // workers.dev and preview URLs would bypass the login.
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "quotes.drewcassidy.dev", "custom_domain": true }],
+  "assets": {
+    // Built with `npm run build:cloud` (Vite mode "cloud").
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "omni-renewal-quote",
+      "database_id": "7eb85a3c-d209-462f-8e1c-c521bb40730a",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "vars": {
+    // From the "Quote assistant" Cloudflare Access application, which reuses the
+    // chat site's "Owner only" policy. The API refuses all requests if unset.
+    "ACCESS_TEAM_DOMAIN": "https://drewcassidy.cloudflareaccess.com",
+    "ACCESS_AUD": "8840af540f8188e317b5411396e5bbdb8eb016096dd0cae51acc58aec2ffd196",
+    "ALLOWED_EMAIL": "67.nmh.69@gmail.com",
+  },
+  "observability": { "enabled": true },
+}

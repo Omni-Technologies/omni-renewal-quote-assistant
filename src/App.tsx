@@ -30,6 +30,7 @@ import { HistoricalHours } from './components/HistoricalHours';
 import { applyHistoryToRenewal, type HistoryApplyPayload } from './lib/dtools';
 import { reloadHistoryContext } from './lib/historyContextStore';
 import { ConfirmDialog, Toast } from './components/ui';
+import { cloudMode, storeName } from './lib/cloudStore';
 
 type Theme = 'light' | 'dark';
 type View = 'renewals' | 'history';
@@ -92,7 +93,7 @@ export default function App() {
         setSaveState('error');
         console.error('Save failed; changes retained for retry', error);
         notify(
-          'Could not save to this browser. Your edits are retained and retrying automatically.',
+          `Could not save to ${storeName}. Your edits are retained and retrying automatically.`,
           'danger',
         );
       },
@@ -122,7 +123,7 @@ export default function App() {
         setLoading(false);
         setSaveState('error');
         console.error('Load failed', error);
-        notify('Could not read saved renewals from this browser.', 'danger');
+        notify(`Could not read saved renewals from ${storeName}.`, 'danger');
       });
     return () => {
       active = false;
@@ -347,14 +348,14 @@ export default function App() {
         setLastSaved(Date.now());
         notify(
           `Added ${summary.added} missing renewal${summary.added === 1 ? '' : 's'} from backup` +
-            (summary.kept ? `; kept ${summary.kept} already in this browser unchanged.` : '.'),
+            (summary.kept ? `; kept ${summary.kept} already in ${storeName} unchanged.` : '.'),
         );
         setRestorePreview(null);
       });
       if (!restored) notifySaveBlocked('Restore');
     } catch (error) {
       console.error('Restore failed', error);
-      notify('Restore failed while writing to this browser.', 'danger');
+      notify(`Restore failed while writing to ${storeName}.`, 'danger');
     } finally {
       setRestoreBusy(false);
     }
@@ -573,7 +574,9 @@ export default function App() {
                     New renewal
                   </button>
                   <p className="mt-4 text-[11px] text-slate-400 dark:text-slate-500">
-                    All records stay in this browser on this PC. No cloud or account.
+                    {cloudMode
+                      ? 'All records are kept in your private online database, behind your sign-in.'
+                      : 'All records stay in this browser on this PC. No cloud or account.'}
                   </p>
                 </div>
               </div>
@@ -605,7 +608,7 @@ export default function App() {
                   deleteTarget?.company.companyName ||
                   'Untitled renewal'}
               </span>{' '}
-              will be permanently removed from this browser.
+              will be permanently removed from {storeName}.
             </p>
             <p className="text-[12px] text-slate-500 dark:text-slate-400">
               This cannot be undone. Export a JSON backup first if you may need it later.
@@ -647,16 +650,16 @@ export default function App() {
               ) : null}
               {restorePreview.backup.dtools ? (
                 <p className="text-[12px] text-slate-500 dark:text-slate-400">
-                  Its {restorePreview.backup.dtools.rows.length} timesheet rows are added only if this browser has no timesheet history; its {restorePreview.backup.dtools.decisions.length} manual decisions are added only where this browser has none for that project.
+                  Its {restorePreview.backup.dtools.rows.length} timesheet rows are added only if {storeName} has no timesheet history; its {restorePreview.backup.dtools.decisions.length} manual decisions are added only where {storeName} has none for that project.
                 </p>
               ) : null}
               {restorePreview.backup.jobCost ? (
                 <p className="text-[12px] text-slate-500 dark:text-slate-400">
-                  Its {restorePreview.backup.jobCost.projects.length} job-cost projects are added only if this browser has no job-cost history.
+                  Its {restorePreview.backup.jobCost.projects.length} job-cost projects are added only if {storeName} has no job-cost history.
                 </p>
               ) : null}
               <p className="text-[12px] text-slate-500 dark:text-slate-400">
-                Only renewals missing from this browser are added. Renewals already here,
+                Only renewals missing from {storeName} are added. Renewals already here,
                 including ones changed since this backup, are never overwritten or removed.
               </p>
             </div>
