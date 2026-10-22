@@ -93,7 +93,12 @@ export function siteKeyFor(clientName: string, projectName: string): string {
   const siteName = /^(?:wisconsin department of natural resources(?: dnr)?|wisconsin dnr)$/.test(site)
     ? 'wisconsin dnr'
     : site;
-  return `${client}::${siteName}`;
+  // Titles sometimes repeat client words ("ProHealth Care - Hartland Clinic" vs
+  // "Hartland Clinic", "St. Mary's Madison Hospital" vs "St. Mary's Hospital").
+  // Within one client only the remaining words, in any order, identify the site.
+  const clientWords = new Set(client.split(' '));
+  const siteWords = [...new Set(siteName.split(' ').filter((word) => word && !clientWords.has(word)))].sort();
+  return `${client}::${siteWords.join(' ')}`;
 }
 
 /* ------------------------------------------------------------------------- */

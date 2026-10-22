@@ -246,6 +246,26 @@ describe('D-Tools parsing and classification', () => {
     expect(sites[0].siteKey).not.toBe(sites[1].siteKey);
   });
 
+  it('groups titles that add or drop client words, without merging other sites of that client', () => {
+    const client = 'SSM Health St. Mary\'s Hospital Madison';
+    const parsed = parse([
+      row({ 'Client Name': client, 'Project Name': 'I&T - FA St. Mary\'s Hospital Annual Fire Alarm Inspection 2024 1 of 3', 'Project Number': '24-0001' }),
+      row({ 'Client Name': client, 'Project Name': 'I&T - FA St. Mary\'s Madison Hospital Annual Fire Alarm Inspection 2025 2 of 3', 'Project Number': '25-0001' }),
+      row({ 'Client Name': client, 'Project Name': 'I&T - FA St. Mary\'s Hospital Madison Semi Annual Fire Alarm Inspection 2023', 'Project Number': '23-0001' }),
+      row({ 'Client Name': 'SSM Health St. Mary\'s Hospital Janesville', 'Project Name': 'I&T - FA St. Mary\'s Janesville Hospital Annual Fire Alarm Inspection 2025', 'Project Number': '25-0002' }),
+      row({ 'Client Name': 'ProHealth Care Inc', 'Project Name': 'I&T - FA ProHealth Care - Hartland Clinic Annual Fire Alarm Inspection 2026 3 of 5', 'Project Number': '26-0001' }),
+      row({ 'Client Name': 'ProHealth Care Inc', 'Project Name': 'I&T - FA Hartland Clinic Annual Fire Alarm Inspection 2025 2 of 5', 'Project Number': '25-0003' }),
+      row({ 'Client Name': 'ProHealth Care Inc', 'Project Name': 'I&T - FA Muskego Clinic Annual Fire Alarm Inspection 2025 2 of 5', 'Project Number': '25-0004' }),
+    ]);
+    const key = (number: string) => parsed.rows.find((entry) => entry.projectNumber === number)!.siteKey;
+    expect(key('25-0001')).toBe(key('24-0001'));
+    expect(key('23-0001')).toBe(key('24-0001'));
+    expect(key('25-0002')).not.toBe(key('24-0001'));
+    expect(key('26-0001')).toBe(key('25-0003'));
+    expect(key('25-0004')).not.toBe(key('25-0003'));
+    expect(buildSiteSummaries(buildProjects(parsed.rows))).toHaveLength(4);
+  });
+
   it('expands UWCU while preserving branch and client boundaries, including saved imports', () => {
     const parsed = parse([
       row({ 'Client Name': 'UWCU', 'Project Name': 'I&T - FA UWCU New Berlin Annual Fire Alarm Inspection 2024', 'Project Number': '24-0186' }),

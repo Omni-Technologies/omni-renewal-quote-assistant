@@ -2,6 +2,22 @@
 
 ## Current operating handoff — 2026-10-22
 
+### Site grouping ignores client words in titles — 2026-10-22 (local, not yet pushed)
+
+- User: obvious variants of one site should group, e.g. "St. Mary's Hospital"
+  and "St. Mary's Madison Hospital"; sharing a client must not merge sites.
+- `siteKeyFor` (`src/lib/dtools.ts`) now drops words already in the client name
+  and sorts the remaining site words. The key is a pure function of the old
+  key, so groups can only merge, never split. Site keys are recomputed on load
+  and decisions are keyed by project number, so saved data is unaffected.
+- An audit of the real CSV plus both job-cost workbooks (local only) found 50
+  merged groups, all the same site (ProHealth "ProHealth Care - X" vs "X",
+  Verona schools, Wilderness Territory, Promega, Wyndham, St. Mary's Madison…).
+  No different locations merged.
+- Checks: typecheck, lint, 213 tests (new regression test in dtools.test.ts),
+  `npm run build`, `npm run build:cloud` all pass.
+- Next: commit, push, and `npm run deploy:cloud` so the online site picks it up.
+
 ### Online version on quotes.drewcassidy.dev with Cloudflare D1 — 2026-10-22 (deployed, committed, live data loaded)
 
 - User: one accurate history database at drewcassidy.dev, behind a login like
