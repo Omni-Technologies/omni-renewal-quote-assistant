@@ -265,6 +265,8 @@ controls sit directly after the clause controls in the same scrolling flow.
    not counted as zero. The average and recommended whole hours are suggestions
    only.
 5. Enter **quoted** hours or proposed annual price: either updates the other.
+   Changing the labor rate keeps the quoted hours and updates the price; with
+   no hours yet, the price stays and hours are filled in from it.
    Historical actual hours and their average remain independent suggestions.
 6. Automatic mileage cost is `$50` per eight-hour block, rounded up. Customer
    mileage charge includes **20% markup**. Price = hours*rate + customer mileage

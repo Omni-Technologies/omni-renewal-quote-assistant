@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ClipboardCopy, DollarSign } from 'lucide-react';
 import type { Renewal } from '../types';
 import { buildPricingSummary } from '../lib/pricingSummary';
-import { updateMileageCost, updateRenewalLabor, updateRenewalPricing } from '../lib/renewalInputs';
+import { updateLaborRate, updateMileageCost, updateRenewalLabor, updateRenewalPricing } from '../lib/renewalInputs';
 import { calculatePriceChange, hasLowLaborRate } from '../lib/calculations';
 import {
   formatCurrency,
@@ -106,7 +106,7 @@ export function PricingSection({
         <Field label="Labor rate per hour" hint="Warns below $90.">
           <NumberInput
             value={pricing.laborRatePerHour}
-            onChange={(value) => patch({ laborRatePerHour: value })}
+            onChange={(value) => update((current) => updateLaborRate(current, value))}
             placeholder="0.00"
             min={0}
             step={0.01}

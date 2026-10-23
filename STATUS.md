@@ -2,7 +2,48 @@
 
 ## Current operating handoff — 2026-10-23
 
-### HS means High School in site titles — 2026-10-23 (local, not yet pushed)
+### Labor rate reprices instead of changing hours — 2026-10-23 (local, not yet pushed)
+
+- User: changing the labor rate must only update the price/totals, like
+  changing hours does; it must not change the quoted hours.
+- New `updateLaborRate` (`src/lib/renewalInputs.ts`), same shape as
+  `updateMileageCost`: with quoted hours, it keeps them and reprices through
+  `updateRenewalLabor` (automatic mileage follows the unchanged hours; manual
+  mileage is kept). With no hours, it falls back to `updateRenewalPricing`
+  (price kept, hours derived). `PricingSection.tsx` rate input uses it.
+  `updateRenewalPricing` itself is unchanged. Example: 5 h at $90 = $510;
+  rate 75 -> 5 h, $435. Clearing the rate leaves hours and blanks the price.
+- Tests: new renewalInputs test. scripts/renewal_handoff_check.mjs now expects
+  rate 100 -> 5 h/$560 and rate 90 -> 6 h/$650 (was 4.5 h from price).
+  scripts/browser_audit.mjs: fills price before hours, asserts 17 h/$1693
+  survive rate 89 and history apply.
+- browser_audit.mjs passes end to end again (it had been failing since the
+  linked-pricing and expanded-sections changes). Stale script fixes, no app
+  changes: open the imported-project row by its "h actual" summary instead of
+  the first `details`; open Renewal process only if closed (sections start
+  open); button name `Duplicate renewal` (aria-label); read the backup from
+  the download stream and write it ourselves, because `saveAs` + `readFile`
+  hit EPERM on Windows right after the save.
+- Checks: typecheck, lint, 216 tests, build, build:cloud exit 0. All 8 local
+  browser scripts pass (isolated profiles): browser_audit,
+  renewal_handoff_check, layout_check, pricing_copy_check,
+  inline_history_check, unified_history_check, jobcost_check,
+  restore_merge_check. Dev server stopped afterwards.
+
+### Status "Sent To Mike For Review First" — 2026-10-23 (local, not yet pushed)
+
+- User: add this status under Ready for Julie, with the user's exact wording.
+- `src/types.ts` RENEWAL_STATUSES lists it right after Ready for Julie Review.
+  `ui.tsx` gives its badge a violet style. The status select in
+  `RenewalWorkspace.tsx` went from w-48 to w-60, because "First" was clipped.
+  Adding a status is backward compatible: older records keep their status,
+  and the Worker/D1 do not validate statuses.
+- Checks: typecheck, lint, 215 tests (new save/load test in db.test.ts), build,
+  build:cloud. Browser (isolated profile, local dev): option order, save,
+  reload, badge, full label visible at 1440px and 390px with no horizontal
+  overflow; scripts/layout_check.mjs passed. Dev server stopped afterwards.
+
+### HS means High School in site titles — 2026-10-23 (138d3ec pushed, deployed as 80bc2987)
 
 - User: merge "Beloit Turner High School" with "Beloit Turner HS" (same site).
   Client School District of Beloit Turner; 24-0457 (2024) said HS, while
@@ -15,7 +56,8 @@
   only newly merged group was Beloit Turner High School.
 - Checks: typecheck, lint, 214 tests (new HS test in dtools.test.ts),
   `npm run build`, `npm run build:cloud` all exit 0.
-- Next: commit, push, `npm run deploy:cloud`, then the locked check.
+- Deployed; no D1 migrations were needed. The locked check against
+  quotes.drewcassidy.dev passed afterwards.
 
 ### Site grouping ignores client words in titles — 2026-10-22 (ab832d7 pushed, deployed as 0e05bd11)
 

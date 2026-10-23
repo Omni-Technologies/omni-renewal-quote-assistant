@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createRenewal } from './model';
-import { parseAddressCity, updateMileageCost, updateRenewalLabor, updateRenewalPricing } from './renewalInputs';
+import { parseAddressCity, updateLaborRate, updateMileageCost, updateRenewalLabor, updateRenewalPricing } from './renewalInputs';
 
 describe('renewal input conveniences', () => {
   it('adds 20% markup to mileage cost and matches the D-Tools examples in both directions', () => {
@@ -50,6 +50,26 @@ describe('renewal input conveniences', () => {
     expect(updateRenewalPricing(priced, { annualMileageCharge: null }).labor.quotedHours).toBeNull();
     expect(updateRenewalPricing(priced, { laborRatePerHour: 0 }).labor.quotedHours).toBeNull();
     expect(updateRenewalPricing(priced, { proposedAnnualPrice: null }).labor.quotedHours).toBeNull();
+  });
+
+  it('reprices from the quoted hours when the labor rate changes, keeping the hours', () => {
+    const quoted = updateRenewalLabor(createRenewal(), { quotedHours: 5 });
+    const discounted = updateLaborRate(quoted, 75);
+    expect(discounted.labor.quotedHours).toBe(5);
+    expect(discounted.pricing.annualMileageCharge).toBe(60);
+    expect(discounted.pricing.proposedAnnualPrice).toBe(435);
+    expect(updateLaborRate(quoted, 100).pricing.proposedAnnualPrice).toBe(560);
+    const cleared = updateLaborRate(quoted, null);
+    expect(cleared.labor.quotedHours).toBe(5);
+    expect(cleared.pricing.proposedAnnualPrice).toBeNull();
+    expect(updateLaborRate(cleared, 75).pricing.proposedAnnualPrice).toBe(435);
+    const manual = updateRenewalLabor(updateMileageCost(createRenewal(), 50), { quotedHours: 13 });
+    expect(updateLaborRate(manual, 75).pricing.proposedAnnualPrice).toBe(1035);
+    const priceOnly = updateRenewalPricing(createRenewal(), { proposedAnnualPrice: 510 });
+    const unpriced = { ...priceOnly, labor: { ...priceOnly.labor, quotedHours: null } };
+    const fromPrice = updateLaborRate(unpriced, 100);
+    expect(fromPrice.pricing.proposedAnnualPrice).toBe(510);
+    expect(fromPrice.labor.quotedHours).toBe(4.5);
   });
 
   it('preserves manually edited hours when changing unrelated pricing notes', () => {

@@ -11,6 +11,12 @@ export function updateMileageCost(renewal: Renewal, cost: number | null): Renewa
     : updateRenewalLabor({ ...renewal, pricing: { ...renewal.pricing, ...values } }, { quotedHours: renewal.labor.quotedHours });
 }
 
+export function updateLaborRate(renewal: Renewal, rate: number | null): Renewal {
+  return renewal.labor.quotedHours === null
+    ? updateRenewalPricing(renewal, { laborRatePerHour: rate })
+    : updateRenewalLabor({ ...renewal, pricing: { ...renewal.pricing, laborRatePerHour: rate } }, { quotedHours: renewal.labor.quotedHours });
+}
+
 export function updateRenewalPricing(
   renewal: Renewal,
   values: Partial<Renewal['pricing']>,

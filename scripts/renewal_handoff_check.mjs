@@ -87,10 +87,11 @@ const expectedBody = 'Good morning,\nAttached is a 3-year annual fire alarm insp
   assert.equal(await field('Proposed quoted labor hours').inputValue(), '5');
   await field('Labor rate per hour').fill('100');
   await field('Location name').click();
-  assert.equal(await field('Proposed quoted labor hours').inputValue(), '4.5');
+  assert.equal(await field('Proposed quoted labor hours').inputValue(), '5');
+  assert.equal(await field('Proposed annual contract price').inputValue(), '560');
   await field('Annual mileage cost').fill('91.67');
   await field('Location name').click();
-  assert.equal(await field('Proposed quoted labor hours').inputValue(), '4.5');
+  assert.equal(await field('Proposed quoted labor hours').inputValue(), '5');
   await field('Proposed quoted labor hours').fill('12');
   await field('Notes about pricing changes').fill('Manual hours reviewed');
   assert.equal(await field('Proposed quoted labor hours').inputValue(), '12');
@@ -102,6 +103,9 @@ const expectedBody = 'Good morning,\nAttached is a 3-year annual fire alarm insp
   await field('Location name').click();
   assert.equal(await field('Proposed annual contract price').inputValue(), '710');
   await field('Labor rate per hour').fill('90');
+  await field('Location name').click();
+  assert.equal(await field('Proposed quoted labor hours').inputValue(), '6');
+  assert.equal(await field('Proposed annual contract price').inputValue(), '650');
   await field('Annual mileage cost').fill('100');
   await field('Proposed annual contract price').fill('1290');
   await field('Location name').click();
@@ -114,7 +118,7 @@ const expectedBody = 'Good morning,\nAttached is a 3-year annual fire alarm insp
   await field('Full site address').fill('101 S Webster St, Madison, WI 53703');
   assert.equal(await field('Site city').inputValue(), 'Madison');
   assert.equal(await field('Site state').inputValue(), 'WI');
-  console.log('PASS: Default $90 rate, price/rate-derived hours, manual hours override, and pasted address city/state.');
+  console.log('PASS: Default $90 rate, price-derived hours, rate changes reprice and keep hours, manual hours override, and pasted address city/state.');
   await page.waitForTimeout(700);
   const saved = () => page.evaluate(async () => (await import('/src/lib/db.ts')).listRenewals());
   let renewals = await saved();

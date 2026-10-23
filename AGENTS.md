@@ -30,7 +30,8 @@ make targeted changes rather than rebuilding it.
   do not add a year to that formula. Read model normalization before changing
   defaults; older current-year drafts and explicit manual start years differ.
 - Price and quoted hours update each other in event handlers, not effects.
-  Default rate90. Mileage cost =50 per eight-hour block rounded up; customer
+  A labor-rate change keeps quoted hours and reprices (`updateLaborRate`); only
+  with no hours does it derive hours from the price. Default rate90. Mileage cost =50 per eight-hour block rounded up; customer
   charge = cost*1.20. Thus 13h ->1290, 14h ->1380, 5h ->510 at rate90.
   Do not regress to subtracting a fixed60 for all quotes or use cost100 as the
   customer charge120. Keep historical actual hours independent of quoted hours.

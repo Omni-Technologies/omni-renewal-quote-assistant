@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { readFile, writeFile, mkdir, mkdtemp } from 'node:fs/promises';
+import { writeFile, mkdir, mkdtemp } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -28,15 +28,17 @@ const body = () => page.locator('body').innerText();
 const label = (name) => page.getByLabel(name, { exact: true });
 const renewal = () => page.evaluate(async () => (await import('/src/lib/db.ts')).listRenewals().then((items) => items[0]));
 const stat = (name) => page.locator('.stat').filter({ has: page.getByText(name, { exact: true }) }).locator('.stat-value').innerText();
-let backupPath, metrics;
+let backupPath, metrics, entered;
 try {
   await page.goto('http://127.0.0.1:5173');
   await step('Create renewal with manual data', async () => {
     await page.getByRole('button', { name: 'New Renewal', exact: true }).click();
-    for (const [name, value] of Object.entries({ 'Company name': 'QA preserved company', 'Client name': 'QA original client', 'Location name': 'QA original location', 'Full site address': '123 QA Street', 'Site city': 'Madison', 'Special company quoting notes': 'Preserve customer instructions', 'Internal renewal notes': 'Preserve internal notes', 'Proposed quoted labor hours': '17', 'Proposed annual contract price': '9500', 'Labor rate per hour': '89' })) await label(name).fill(value);
+    for (const [name, value] of Object.entries({ 'Company name': 'QA preserved company', 'Client name': 'QA original client', 'Location name': 'QA original location', 'Full site address': '123 QA Street', 'Site city': 'Madison', 'Special company quoting notes': 'Preserve customer instructions', 'Internal renewal notes': 'Preserve internal notes', 'Proposed annual contract price': '9500', 'Proposed quoted labor hours': '17', 'Labor rate per hour': '89' })) await label(name).fill(value);
     await label('Contract start year').fill('2027');
     await label('Contract duration in years').fill('3');
     assert.match(await body(), /Mike/);
+    entered = { price: await label('Proposed annual contract price').inputValue(), hours: await label('Proposed quoted labor hours').inputValue() };
+    assert.deepEqual(entered, { price: '1693', hours: '17' });
   });
   await page.getByRole('button', { name: 'Historical Hours', exact: true }).click();
   await step('Import all original 6,380 source rows', async () => {
@@ -132,11 +134,11 @@ try {
     assert.equal(await label('Full site address').inputValue(), '123 QA Street');
     assert.equal(await label('Special company quoting notes').inputValue(), 'Preserve customer instructions');
     assert.equal(await label('Internal renewal notes').inputValue(), 'Preserve internal notes');
-    assert.equal(await label('Proposed annual contract price').inputValue(), '9500');
-    assert.equal(await label('Proposed quoted labor hours').inputValue(), '17');
+    assert.equal(await label('Proposed annual contract price').inputValue(), entered.price);
+    assert.equal(await label('Proposed quoted labor hours').inputValue(), entered.hours);
     assert.equal(await stat('Historical average'), selectedAverage);
     assert.match(await body(), /\$150\.00/);
-    await page.locator('details').first().locator('summary').click();
+    await page.locator('summary').filter({ hasText: /\d h actual$/ }).first().click();
     assert.match(await body(), /Source \/ sheet \/ row/);
   });
   await step('Override hours, generate and copy plain-text SOW; route to Julie', async () => {
@@ -154,7 +156,7 @@ try {
   });
   await step('Save, autosave, checklist and reload retain renewal snapshot', async () => {
     const checklist = page.locator('details').filter({ has: page.getByRole('heading', { name: 'Renewal process', exact: true }) });
-    await checklist.locator('summary').click();
+    if (!(await checklist.evaluate((element) => element.open))) await checklist.locator('summary').click();
     await checklist.getByRole('checkbox').first().check();
     await page.getByText(/^Saved \d/).waitFor();
     assert.equal((await renewal()).labor.quotedHours, 19);
@@ -170,11 +172,13 @@ try {
       page.waitForEvent('download', { timeout: 30000 }),
       page.getByRole('button', { name: 'Export backup', exact: true }).click(),
     ]);
-    backupPath = path.join(out, 'verified-backup.json'); await file.saveAs(backupPath);
-    const backup = JSON.parse(await readFile(backupPath, 'utf8'));
+    const chunks = []; for await (const chunk of await file.createReadStream()) chunks.push(chunk);
+    const content = Buffer.concat(chunks);
+    backupPath = path.join(out, 'verified-backup.json'); await writeFile(backupPath, content);
+    const backup = JSON.parse(content.toString('utf8'));
     assert.equal(backup.version, 2); assert.equal(backup.dtools.rows.length, 6380);
     assert.ok(backup.dtools.decisions.length > 0);
-    await page.getByRole('button', { name: 'Duplicate', exact: true }).click();
+    await page.getByRole('button', { name: 'Duplicate renewal', exact: true }).click();
     await page.getByRole('button', { name: 'Delete renewal', exact: true }).click();
     await page.getByRole('button', { name: 'Delete renewal', exact: true }).last().click();
     await label('Restore backup file').setInputFiles(backupPath);
