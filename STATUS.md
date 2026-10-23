@@ -2,7 +2,7 @@
 
 ## Current operating handoff — 2026-10-23
 
-### Labor rate reprices instead of changing hours — 2026-10-23 (local, not yet pushed)
+### Labor rate reprices instead of changing hours — 2026-10-23 (a663296 pushed, deployed as 5866cee6)
 
 - User: changing the labor rate must only update the price/totals, like
   changing hours does; it must not change the quoted hours.
@@ -30,7 +30,7 @@
   inline_history_check, unified_history_check, jobcost_check,
   restore_merge_check. Dev server stopped afterwards.
 
-### Status "Sent To Mike For Review First" — 2026-10-23 (local, not yet pushed)
+### Status "Sent To Mike For Review First" — 2026-10-23 (8ff54b7 pushed, deployed as 5866cee6)
 
 - User: add this status under Ready for Julie, with the user's exact wording.
 - `src/types.ts` RENEWAL_STATUSES lists it right after Ready for Julie Review.
