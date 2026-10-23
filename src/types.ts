@@ -9,6 +9,7 @@
 export const RENEWAL_STATUSES = [
   'Draft',
   'Ready for Julie Review',
+  'Sent To Mike For Review First',
   'Changes Requested',
   'Approved',
   'Completed',

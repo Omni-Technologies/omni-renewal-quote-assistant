@@ -131,6 +131,13 @@ describe('saved renewals', () => {
     expect(reloaded[0].status).toBe('Approved');
   });
 
+  it('keeps the Sent To Mike For Review First status through save and load', async () => {
+    const renewal = makeRenewal({ status: 'Sent To Mike For Review First' });
+    expect(normalizeRenewal(renewal)?.status).toBe('Sent To Mike For Review First');
+    await saveRenewal(renewal);
+    expect((await listRenewals())[0].status).toBe('Sent To Mike For Review First');
+  });
+
   it('deletes a record', async () => {
     const renewal = makeRenewal();
     await saveRenewal(renewal);

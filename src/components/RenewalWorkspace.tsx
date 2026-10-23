@@ -85,7 +85,7 @@ export function RenewalWorkspace({
 
         <div className="flex items-center gap-1.5">
           <select
-            className="input input-sm w-48 font-medium"
+            className="input input-sm w-60 font-medium"
             value={renewal.status}
             aria-label="Renewal status"
             onChange={(event) =>
