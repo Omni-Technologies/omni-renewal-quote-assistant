@@ -1,8 +1,23 @@
 # STATUS — OMNI Renewal Quote Assistant
 
-## Current operating handoff — 2026-10-22
+## Current operating handoff — 2026-10-23
 
-### Site grouping ignores client words in titles — 2026-10-22 (local, not yet pushed)
+### HS means High School in site titles — 2026-10-23 (local, not yet pushed)
+
+- User: merge "Beloit Turner High School" with "Beloit Turner HS" (same site).
+  Client School District of Beloit Turner; 24-0457 (2024) said HS, while
+  2021–2023, 24-2176 (2025) and 25-1664 (2026) said High School.
+- `siteKeyFor` (`src/lib/dtools.ts`) expands a standalone `hs` to
+  `high school` before the client-word filter. Keys are recomputed on load,
+  so no migration or reimport is needed.
+- Audit (local only): site keys for all 2,085 client/title pairs in the Oct 19
+  CSV and both Oct 21 job-cost workbooks were compared before and after. The
+  only newly merged group was Beloit Turner High School.
+- Checks: typecheck, lint, 214 tests (new HS test in dtools.test.ts),
+  `npm run build`, `npm run build:cloud` all exit 0.
+- Next: commit, push, `npm run deploy:cloud`, then the locked check.
+
+### Site grouping ignores client words in titles — 2026-10-22 (ab832d7 pushed, deployed as 0e05bd11)
 
 - User: obvious variants of one site should group, e.g. "St. Mary's Hospital"
   and "St. Mary's Madison Hospital"; sharing a client must not merge sites.
@@ -16,7 +31,8 @@
   No different locations merged.
 - Checks: typecheck, lint, 213 tests (new regression test in dtools.test.ts),
   `npm run build`, `npm run build:cloud` all pass.
-- Next: commit, push, and `npm run deploy:cloud` so the online site picks it up.
+- Deployed; no D1 migrations were needed. The locked check against
+  quotes.drewcassidy.dev passed afterwards.
 
 ### Online version on quotes.drewcassidy.dev with Cloudflare D1 — 2026-10-22 (deployed, committed, live data loaded)
 

@@ -266,6 +266,22 @@ describe('D-Tools parsing and classification', () => {
     expect(buildSiteSummaries(buildProjects(parsed.rows))).toHaveLength(4);
   });
 
+  it('treats HS as High School, including saved imports, without merging other schools', () => {
+    const client = 'School District of Beloit Turner';
+    const parsed = parse([
+      row({ 'Client Name': client, 'Project Name': 'I&T - FA Beloit Turner HS Annual Fire Alarm Inspection 2024 1 of 3', 'Project Number': '24-0457' }),
+      row({ 'Client Name': client, 'Project Name': 'I&T - FA Beloit Turner High School Annual Fire Alarm Inspection 2025 2 of 3', 'Project Number': '24-2176' }),
+      row({ 'Client Name': client, 'Project Name': 'I&T - FA Beloit Turner Middle School Annual Fire Alarm Inspection 2025', 'Project Number': '25-0001' }),
+      row({ 'Client Name': 'Other District', 'Project Name': 'I&T - FA Beloit Turner HS Annual Fire Alarm Inspection 2025', 'Project Number': '25-0002' }),
+    ]);
+    const projects = buildProjects(parsed.rows.map((entry) => ({ ...entry, siteKey: `old::${entry.projectNumber}` })));
+    const key = (number: string) => projects.find((entry) => entry.projectNumber === number)!.siteKey;
+    expect(key('24-2176')).toBe(key('24-0457'));
+    expect(key('25-0001')).not.toBe(key('24-0457'));
+    expect(key('25-0002')).not.toBe(key('24-0457'));
+    expect(buildSiteSummaries(projects)).toHaveLength(3);
+  });
+
   it('expands UWCU while preserving branch and client boundaries, including saved imports', () => {
     const parsed = parse([
       row({ 'Client Name': 'UWCU', 'Project Name': 'I&T - FA UWCU New Berlin Annual Fire Alarm Inspection 2024', 'Project Number': '24-0186' }),

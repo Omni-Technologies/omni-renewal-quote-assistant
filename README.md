@@ -131,6 +131,10 @@ suffix for those sites. Location still must match: New Berlin variants join
 across years while other branches stay separate. Refresh to apply this to
 existing imports; no reimport is needed.
 
+A standalone HS in a site title means High School, so "Beloit Turner HS" and
+"Beloit Turner High School" are one site. Other schools of that district stay
+separate.
+
 East Madison Toyota history also joins the verified Penske Auto and PAG Madison
 T1 dba East Madison Toyota client names, including the location title with
 `(Penske Auto)`. Its 2023–2026 inspections appear together after refresh without

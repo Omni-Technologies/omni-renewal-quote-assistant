@@ -80,7 +80,9 @@ export function deriveSiteLabel(projectName: string): string {
 
 export function siteKeyFor(clientName: string, projectName: string): string {
   const client = normalizeText(clientName).replace(/\buwcu\b/g, 'uw credit union');
-  const expandedSite = normalizeText(deriveSiteLabel(projectName)).replace(/\buwcu\b/g, 'uw credit union');
+  const expandedSite = normalizeText(deriveSiteLabel(projectName))
+    .replace(/\buwcu\b/g, 'uw credit union')
+    .replace(/\bhs\b/g, 'high school');
   if (
     ['penske auto', 'pag madison t1 dba east madison toyota'].includes(client) &&
     ['east madison toyota', 'east madison toyota penske auto'].includes(expandedSite)
