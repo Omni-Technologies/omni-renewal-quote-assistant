@@ -2,7 +2,7 @@
 
 ## Current operating handoff — 2026-10-23
 
-### Beehive Homes of Oregon is one site — 2026-10-23 (local, not yet committed)
+### Beehive Homes of Oregon is one site — 2026-10-23 (8c99eed pushed, deployed as ce1a6d84)
 
 - User: "Beehive Homes of Oregon", "… Both Buildings" and "… 101 & 151" are
   the same place. Client Beehive Homes of Oregon: 22-0157 (2022) said Both
@@ -17,6 +17,10 @@
   only newly merged group (1,015 -> 1,013 keys), and no group split.
 - Checks: typecheck, lint, 217 tests (new Beehive test in dtools.test.ts),
   `npm run build`, `npm run build:cloud` all exit 0.
+- Deployed; no D1 migrations were needed. The locked check against
+  quotes.drewcassidy.dev passed afterwards. The first deploy attempt failed
+  on a wrangler token refresh (Cloudflare auth server slow); after
+  `npx wrangler whoami` refreshed it, the retry succeeded.
 
 ### Labor rate reprices instead of changing hours — 2026-10-23 (a663296 pushed, deployed as 5866cee6)
 
