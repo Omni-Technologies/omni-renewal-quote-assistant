@@ -16,6 +16,7 @@ import {
   parseDurationHours,
   searchSites,
   selectionSummary,
+  siteKeyFor,
 } from './dtools';
 import { makeRenewal } from './testHelpers';
 import { calculateHistoryStats } from './calculations';
@@ -279,6 +280,26 @@ describe('D-Tools parsing and classification', () => {
     expect(key('24-2176')).toBe(key('24-0457'));
     expect(key('25-0001')).not.toBe(key('24-0457'));
     expect(key('25-0002')).not.toBe(key('24-0457'));
+    expect(buildSiteSummaries(projects)).toHaveLength(3);
+  });
+
+  it('joins the Beehive Homes of Oregon building titles, including saved imports, without merging other sites', () => {
+    const client = 'Beehive Homes of Oregon';
+    const parsed = parse([
+      row({ 'Client Name': client, 'Project Name': 'I&T - FA Beehive Homes of Oregon Both Buildings Annual Fire Alarm Inspection 2022', 'Project Number': '22-0157' }),
+      row({ 'Client Name': client, 'Project Name': 'I&T - FA Beehive Homes of Oregon Annual Fire Alarm Inspection 2023', 'Project Number': '23-0541' }),
+      row({ 'Client Name': client, 'Project Name': 'I&T - FA Beehive Homes of Oregon Annual Fire Alarm Inspection 2024 1 of 3', 'Project Number': '24-0350' }),
+      row({ 'Client Name': client, 'Project Name': 'I&T - FA Beehive Homes of Oregon 101 & 151 Annual Fire Alarm Inspection 2025 2 of 3', 'Project Number': '24-2174' }),
+      row({ 'Client Name': client, 'Project Name': 'I&T - FA Beehive Homes of Oregon 101 & 151 Annual Fire Alarm Inspection 2026 3 of 3', 'Project Number': '25-1371' }),
+      row({ 'Client Name': client, 'Project Name': 'I&T - FA Beehive Homes of Oregon 201 Annual Fire Alarm Inspection 2025', 'Project Number': '25-0001' }),
+      row({ 'Client Name': 'Other Client', 'Project Name': 'I&T - FA Beehive Homes of Oregon Both Buildings Annual Fire Alarm Inspection 2025', 'Project Number': '25-0002' }),
+    ]);
+    const projects = buildProjects(parsed.rows.map((entry) => ({ ...entry, siteKey: `old::${entry.projectNumber}` })));
+    const key = (number: string) => projects.find((entry) => entry.projectNumber === number)!.siteKey;
+    expect(['22-0157', '23-0541', '24-0350', '24-2174'].map(key)).toEqual(Array(4).fill(key('25-1371')));
+    expect(key('25-0001')).not.toBe(key('25-1371'));
+    expect(key('25-0002')).not.toBe(key('25-1371'));
+    expect(siteKeyFor(client, 'Beehive Homes of Oregon 101 & 151')).toBe(key('25-1371'));
     expect(buildSiteSummaries(projects)).toHaveLength(3);
   });
 

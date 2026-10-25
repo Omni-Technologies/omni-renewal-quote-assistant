@@ -2,6 +2,22 @@
 
 ## Current operating handoff — 2026-10-23
 
+### Beehive Homes of Oregon is one site — 2026-10-23 (local, not yet committed)
+
+- User: "Beehive Homes of Oregon", "… Both Buildings" and "… 101 & 151" are
+  the same place. Client Beehive Homes of Oregon: 22-0157 (2022) said Both
+  Buildings, 23-0541 (2023) and 24-0350 (2024) had no suffix, and 24-2174
+  (2025) and 25-1371 (2026) said 101 & 151.
+- `siteKeyFor` (`src/lib/dtools.ts`) maps those three exact site-word sets,
+  for that client only, to `beehive homes of oregon::101 151 and`. This is an
+  exact alias, like East Madison Toyota, rather than a general building-number
+  rule. Keys are recomputed on load, so no migration or reimport is needed.
+- Audit (local only): all 2,085 client/title pairs in the Oct 19 CSV and both
+  Oct 21 job-cost workbooks were compared before and after. Beehive was the
+  only newly merged group (1,015 -> 1,013 keys), and no group split.
+- Checks: typecheck, lint, 217 tests (new Beehive test in dtools.test.ts),
+  `npm run build`, `npm run build:cloud` all exit 0.
+
 ### Labor rate reprices instead of changing hours — 2026-10-23 (a663296 pushed, deployed as 5866cee6)
 
 - User: changing the labor rate must only update the price/totals, like

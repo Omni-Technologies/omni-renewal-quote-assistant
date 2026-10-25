@@ -100,6 +100,9 @@ export function siteKeyFor(clientName: string, projectName: string): string {
   // Within one client only the remaining words, in any order, identify the site.
   const clientWords = new Set(client.split(' '));
   const siteWords = [...new Set(siteName.split(' ').filter((word) => word && !clientWords.has(word)))].sort();
+  if (client === 'beehive homes of oregon' && ['', 'both buildings', '101 151 and'].includes(siteWords.join(' '))) {
+    return 'beehive homes of oregon::101 151 and';
+  }
   return `${client}::${siteWords.join(' ')}`;
 }
 
