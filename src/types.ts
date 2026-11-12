@@ -30,7 +30,20 @@ export type InspectorCount = 1 | 2;
 
 export type InspectorOverride = 'one' | 'two' | null;
 
-export type BillingChoice = 'annual' | 'deposit';
+export const SOW_TEMPLATES = ['standard', 'standard-warranty', 'meriter'] as const;
+
+export type SowTemplate = (typeof SOW_TEMPLATES)[number];
+
+export const SOW_INSPECTION_SCOPES = ['Annual', 'Annual and Semi-Annual'] as const;
+
+export type SowInspectionScope = (typeof SOW_INSPECTION_SCOPES)[number];
+
+/** Extra site listed under "Location(s) Included" after the primary location. */
+export interface AdditionalLocation {
+  id: string;
+  locationName: string;
+  siteAddress: string;
+}
 
 export interface CompanyLocation {
   /** Exact company name used in Microsoft Teams. */
@@ -43,6 +56,8 @@ export interface CompanyLocation {
   siteAddress: string;
   siteCity: string;
   siteState: string;
+  /** Multi-location proposals; the primary location above is always listed first. */
+  additionalLocations: AdditionalLocation[];
   inspectionFrequency: InspectionFrequency;
   emailSystemType?: 'Fire Alarm' | 'Intrusion' | 'Nurse Call';
   emailGreeting?: 'Good Day' | 'Good morning' | 'Good afternoon';
@@ -108,21 +123,21 @@ export interface LaborPlan {
 }
 
 export interface SowRuleSelections {
+  template: SowTemplate;
+  /** Standard templates only; the Meriter template is always annual and semi-annual. */
+  inspectionScope: SowInspectionScope;
+  /** Healthcare / hospital location. YES removes the FACP monitoring sentence. */
   isHospital: boolean;
   /** `null` = follow the automatic Madison, WI suggestion. */
   madisonOverride: boolean | null;
   /** `null` = follow the calculated inspector count. */
   singleInspectorOverride: boolean | null;
-  /** `null` = automatic (not hospital AND one inspector). */
+  /** `null` = automatic (not healthcare AND one inspector). */
   facpOverride: boolean | null;
-  /** `null` = automatic from the proposed annual price. */
+  /** `null` = automatic: the billing-after-completion line is always included. */
   annualBillingOverride: boolean | null;
-  /** `null` = automatic from the proposed annual price. */
+  /** `null` = automatic: 40% deposit at a proposed annual price of $10,000 or more. */
   depositOverride: boolean | null;
-  /** Required only when the proposed annual price is exactly $10,000. */
-  billingChoiceAt10000: BillingChoice | null;
-  /** Acknowledges a deliberate both/neither billing combination. */
-  billingExceptionAcknowledged: boolean;
 }
 
 export interface ManualSowDraft {

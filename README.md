@@ -8,7 +8,8 @@ It replaces the manual Teams + D-Tools information hunt with one workspace:
 - Copy-ready D-Tools project name using company, frequency and duration
 - Three-year historical hours calculator with mileage rule
 - Pricing checks and previous-vs-proposed comparison
-- Exact Omni Scope of Work generation with live preview and plain-text copy
+- Exact Omni Scope of Work generation (Standard, Standard + Edwards warranty,
+  Meriter templates) with live preview and plain-text copy
 - Per-renewal status, 21-step renewal process checklist, autosave
 - JSON export / restore
 
@@ -253,6 +254,9 @@ controls sit directly after the clause controls in the same scrolling flow.
    frequency, duration and D-Tools project number. Select Fire Alarm, Intrusion
    or Nurse Call and your greeting; defaults are Fire Alarm and Good Day.
    These selections only affect the email template and are saved per renewal.
+   For a multi-location proposal, click **Add location** under Additional
+   locations and enter each extra location name and full address; the SOW lists
+   them after the main location. Company name is required for the Standard SOW.
 3. Enter previous / proposed annual price and labor rate (defaults to$90).
    **Copy pricing** in Contract pricing copies a plain-text Teams list comment
    headed "Contract pricing update:" with previous and proposed annual prices,
@@ -275,8 +279,12 @@ controls sit directly after the clause controls in the same scrolling flow.
    Mileage edits preserve entered labor hours and update the price. Price edits
    solve the mileage tier and calculate hours; a price in a gap between tiers
    has no matching hours, so enter hours or override mileage instead.
-7. Review the SOW clause controls. Automatic rules are applied first; manual
-   overrides are marked **Manual** and can be reset.
+7. Review the SOW clause controls. Pick the **SOW template** (Standard,
+   Standard + Edwards warranty, or Meriter) and, for the Standard templates,
+   **Inspections included** (Annual, or Annual and Semi-Annual — separate from
+   the Inspection frequency used by the project name and email). Automatic
+   rules are applied first; manual overrides are marked **Manual** and can be
+   reset.
 8. Resolve any blocking items in the preview, then click
    **Copy Scope of Work** and paste into D-Tools Text Format.
    - Empty manual drafts and unresolved `INSERT` placeholders block copying.
@@ -291,16 +299,28 @@ controls sit directly after the clause controls in the same scrolling flow.
 - **Labor / inspectors:** quoted hours of 8 or fewer → one inspector; over 8 →
   two. Two inspectors removes the single-inspector and FACP sentences. Manual
   override available.
-- **Hospital:** YES removes the FACP monitoring sentence.
-- **FACP:** included only when the site is not a hospital **and** one inspector
+- **SOW templates:** Standard opens with "N-Year proposal for Annual [and
+  Semi-Annual] Fire Alarm System Inspections and Testing for <Company name>",
+  then lists every location as "•Name – located at Address." The "each year
+  for the duration of this contract" wording appears only for multi-year
+  contracts. Standard + Edwards warranty adds the exact warranty paragraph after
+  the opening. Meriter uses its fixed wording (annual and semi-annual plus
+  monitoring), puts "Meriter" before the location name unless the name already
+  contains it, uses July 1 – June 30 contract dates (3 years from 2027 =
+  July 1, 2027 – June 30, 2030), ignores the clause rules below and additional
+  locations, and keeps the `*INSERT CHART - SEE PREVIOUS MERITER PROPOSALS]*`
+  line for you to replace in D-Tools.
+- **Healthcare / hospital:** YES removes the FACP monitoring sentence.
+- **FACP:** included only when the site is not healthcare **and** one inspector
   is quoted.
-- **Billing:** proposed annual price below $10,000 → annual-after-completion
-  sentence; above $10,000 → 40% deposit. Exactly $10,000 requires an explicit
-  choice. Blank price never defaults from the previous price.
-- **Both / neither billing clauses:** allowed only after an explicit
-  acknowledgement.
-- **Madison, WI:** AHJ fee sentence auto-included from the verified city and
-  state (never a text search of the street address); manual override available.
+- **Billing:** the "amount listed will be billed after completion" sentence is
+  always included (override can remove it). The 40% deposit is added when the
+  proposed annual price is $10,000 or more. A blank price blocks copying until
+  a price is entered or the deposit is set manually; it never defaults from the
+  previous price.
+- **Madison, WI:** AHJ fee sentence auto-included when the main site's city and
+  state, or any additional location's address, is Madison, WI (never a text
+  search of the street name); manual override available.
 - **Contract end date:** December31 of `start year + duration - 1`, formatted
   `MM/DD/YYYY`. New renewal start year defaults to the next calendar year.
   Existing unmarked current-year drafts created this year receive that default
@@ -320,8 +340,8 @@ npm run lint    # oxlint
 npm run build   # TypeScript + production bundle
 ```
 
-Tests cover the hours rules, mileage, inspector/FACP/hospital/Madison rules,
-billing thresholds, end dates, exact template preservation, manual-draft
+Tests cover the hours rules, mileage, inspector/FACP/healthcare/Madison rules,
+billing thresholds, end dates, exact wording of all three SOW templates, manual-draft
 protection and review gating, persistence round-trips, duplication, strict
 backup validation, autosave failure retention/retry, D-Tools CSV parsing,
 project classification and exclusions, source-row traceability, duplicate

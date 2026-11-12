@@ -147,8 +147,9 @@ try {
     await page.getByRole('button', { name: 'Copy Scope of Work', exact: true }).click();
     const text = await page.evaluate(() => navigator.clipboard.readText());
     assert.match(text, /\n•/); assert.match(text, /Contract End Date: 12\/31\/2029/);
-    assert.match(text, /Cedar Crest Existing Campus\/RCAC located at 123 QA Street/);
-    assert.match(text, /billed after completion of annual inspection/i); assert.doesNotMatch(text, /<[^>]+>/);
+    assert.match(text, /Inspections and Testing for QA preserved company\.\r?\n/);
+    assert.match(text, /•Cedar Crest Existing Campus\/RCAC – located at 123 QA Street\./);
+    assert.match(text, /billed after completion of the inspection\(s\) each year for the duration of this contract\./); assert.doesNotMatch(text, /<[^>]+>/);
     await label('Renewal status').selectOption('Ready for Julie Review');
     assert.match(await body(), /Julie/);
     await label('Proposed quoted labor hours').fill('19');

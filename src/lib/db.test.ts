@@ -95,11 +95,15 @@ describe('saved renewals', () => {
         companyQuotingNotes: 'Always quote two inspectors.',
         internalRenewalNotes: 'Call Dana before sending.',
         startYear: 2025,
+        additionalLocations: [
+          { id: 'loc-2', locationName: 'Maple Grove East', siteAddress: '1240 Maple Grove Rd, Madison, WI 53719' },
+        ],
       },
       sow: {
+        template: 'standard-warranty',
+        inspectionScope: 'Annual and Semi-Annual',
         isHospital: true,
         madisonOverride: true,
-        billingChoiceAt10000: null,
       },
       status: 'Ready for Julie Review',
     });
@@ -161,7 +165,9 @@ describe('fresh and duplicated renewals', () => {
     expect(renewal.status).toBe('Draft');
     expect(renewal.sowDraft).toBeNull();
     expect(checklistProgress(renewal.checklist)).toBe(0);
-    expect(renewal.sow.billingChoiceAt10000).toBeNull();
+    expect(renewal.sow.template).toBe('standard');
+    expect(renewal.sow.inspectionScope).toBe('Annual');
+    expect(renewal.company.additionalLocations).toEqual([]);
     expect(renewal.sow.isHospital).toBe(false);
     expect(renewal.sow.madisonOverride).toBeNull();
   });
@@ -195,7 +201,11 @@ describe('fresh and duplicated renewals', () => {
         pricingChangeNotes: 'Raised 15%.',
       },
       labor: { quotedHours: 22, quotedHoursReason: 'Large site.' },
+      sow: { template: 'meriter', inspectionScope: 'Annual and Semi-Annual', depositOverride: true },
     });
+    source.company.additionalLocations = [
+      { id: 'loc-2', locationName: 'Acme Annex', siteAddress: '2 Annex Rd, Verona, WI 53593' },
+    ];
     source.checklist = Object.fromEntries(
       Array.from({ length: CHECKLIST_TOTAL }, (_, index) => [`step-${index}`, true]),
     );
@@ -217,8 +227,11 @@ describe('fresh and duplicated renewals', () => {
     expect(copy.labor.history.every((entry) => entry.hours === null)).toBe(true);
     expect(copy.sowDraft).toBeNull();
     expect(checklistProgress(copy.checklist)).toBe(0);
-    expect(copy.sow.billingChoiceAt10000).toBeNull();
+    expect(copy.sow.template).toBe('meriter');
+    expect(copy.sow.inspectionScope).toBe('Annual and Semi-Annual');
+    expect(copy.sow.depositOverride).toBeNull();
     expect(copy.sow.annualBillingOverride).toBeNull();
+    expect(copy.company.additionalLocations).toEqual(source.company.additionalLocations);
   });
 });
 
@@ -340,7 +353,9 @@ describe('JSON backup and restore', () => {
           const legacy = validateBackupRenewal(missing);
           expect(legacy.ok).toBe(true);
           if (legacy.ok) expect(legacy.renewal.pricing.annualMileageCharge).toBe(60);
-        } else if ((section === 'pricing' && field === 'mileageCostOverride') || (section === 'company' && ['startYearSource', 'emailSystemType', 'emailGreeting'].includes(field))) {
+        } else if ((section === 'pricing' && field === 'mileageCostOverride') ||
+          (section === 'company' && ['startYearSource', 'emailSystemType', 'emailGreeting', 'additionalLocations'].includes(field)) ||
+          (section === 'sow' && ['template', 'inspectionScope'].includes(field))) {
           expect(validateBackupRenewal(missing).ok).toBe(true);
         } else {
           expect(validateBackupRenewal(missing).ok, `${section}.${field} missing`).toBe(false);
@@ -484,5 +499,49 @@ describe('JSON backup and restore', () => {
     expect(normalized?.company.siteState).toBe('WI');
     expect(normalized?.checklist['julie']).toBe(false);
     expect(normalized?.schemaVersion).toBe(1);
+    expect(normalized?.sow.template).toBe('standard');
+    expect(normalized?.sow.inspectionScope).toBe('Annual');
+    expect(normalized?.company.additionalLocations).toEqual([]);
+  });
+
+  it('accepts older backups without SOW template fields and drops retired billing choices', () => {
+    const raw = JSON.parse(JSON.stringify(makeRenewal({ pricing: { proposedAnnualPrice: 10000 } })));
+    delete raw.sow.template;
+    delete raw.sow.inspectionScope;
+    delete raw.company.additionalLocations;
+    raw.sow.billingChoiceAt10000 = 'annual';
+    raw.sow.billingExceptionAcknowledged = true;
+    const result = validateBackupRenewal(raw);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.renewal.sow).toEqual({
+      template: 'standard',
+      inspectionScope: 'Annual',
+      isHospital: false,
+      madisonOverride: null,
+      singleInspectorOverride: null,
+      facpOverride: null,
+      annualBillingOverride: null,
+      depositOverride: null,
+    });
+    expect(result.renewal.company.additionalLocations).toEqual([]);
+  });
+
+  it('rejects an unknown SOW template, inspection scope or malformed additional location', () => {
+    const raw = makeRenewal();
+    expect(validateBackupRenewal({ ...raw, sow: { ...raw.sow, template: 'legacy' } }).ok).toBe(false);
+    expect(validateBackupRenewal({ ...raw, sow: { ...raw.sow, inspectionScope: 'Quarterly' } }).ok).toBe(false);
+    for (const additionalLocations of [{}, [null], [{ id: '', locationName: 'A', siteAddress: 'B' }],
+      [{ id: 'x', locationName: 'A' }]]) {
+      expect(validateBackupRenewal({ ...raw, company: { ...raw.company, additionalLocations } }).ok).toBe(false);
+    }
+    const valid = { ...raw, company: { ...raw.company, additionalLocations: [{ id: 'x', locationName: 'A', siteAddress: 'B' }] } };
+    expect(validateBackupRenewal(valid).ok).toBe(true);
+    const duplicated = normalizeRenewal({ ...raw, company: { ...raw.company, additionalLocations: [
+      { id: 'x', locationName: 'A', siteAddress: 'B' }, { id: 'x', locationName: 'C', siteAddress: 'D' }] } });
+    const ids = duplicated?.company.additionalLocations.map((location) => location.id) ?? [];
+    expect(ids[0]).toBe('x');
+    expect(new Set(ids).size).toBe(2);
+    expect(duplicated?.company.additionalLocations.map((location) => location.locationName)).toEqual(['A', 'C']);
   });
 });

@@ -1,4 +1,4 @@
-import type { Renewal, SowRuleSelections } from '../types';
+import type { Renewal, SowInspectionScope, SowTemplate } from '../types';
 import {
   calculateHistoryStats,
   effectiveInspectorCount,
@@ -6,41 +6,70 @@ import {
   hoursDifference,
   isValidPrice,
 } from './calculations';
+import { parseAddressCity } from './renewalInputs';
+
+export const SOW_TEMPLATE_LABELS: Record<SowTemplate, string> = {
+  standard: 'Standard inspection',
+  'standard-warranty': 'Standard + Edwards warranty',
+  meriter: 'Meriter (inspections + monitoring)',
+};
 
 /**
- * The canonical Omni Technologies annual inspection renewal SOW.
+ * The Omni Technologies inspection SOW templates: Standard, Standard with the
+ * Edwards extended parts warranty, and Meriter.
  *
- * Wording below must stay byte-for-byte identical to the supplied contract
- * template. Only the conditionally included bullets are filtered out.
+ * Wording below must stay byte-for-byte identical to the supplied templates.
+ * Bracketed template options are resolved from the renewal, and only the
+ * conditionally included bullets are filtered out.
  */
 export const CORE_PARAGRAPHS = {
+  nfpaReport:
+    '•A complete NFPA test report will be provided upon completion. All addressable devices will be bar coded and logged with the Building Reports system.',
+  detectorCleaning: '•Detector cleaning will be provided as necessary.',
   ownerNotification:
     '•Owner is responsible for notifying building occupants and arranging monitoring of the fire alarm system during the inspection.',
   normalHours:
     '•Inspections will be performed during normal business hours. Omni Technologies will coordinate scheduling at least two weeks in advance.',
+  lift: "•Owner is responsible for providing a lift if required to properly and safely test any devices not easily accessible on a standard 8' A-frame ladder.",
   customerDelay:
-    '•If Omni cannot locate a device or access an area due to customer delay, additional T&M charges may apply.',
+    '•If Omni Technologies cannot locate a device or access an area due to customer delay, additional T&M charges may apply.',
   elevator:
     '•Coordination and fees associated with the elevator company (if devices within the shaft require testing) are the responsibility of the owner.',
-  lift: "•Owner is responsible for providing a lift if required to properly and safely test any device(s) not easily accessible on a standard 8' A-frame ladder",
-  detectorCleaning: '•Detector cleaning will be provided as necessary.',
-  annualInspection:
-    '•Provide one annual inspection in accordance with the state and local codes each year for the duration of this contract.',
-  nfpaReport:
-    '•A complete NFPA test report will be provided upon completion. All addressable devices will be bar coded and logged with the Building Reports system.',
 } as const;
 
 export const CONDITIONAL_CLAUSES = {
   singleInspector: '•Labor is quoted with a single inspector.',
-  annualBilling:
-    '•Amount listed per year will be billed after completion of annual inspection each year for the duration of this contract.',
   deposit:
-    '•40% deposit is required upon acceptance of this proposal to initiate scheduling.',
+    '•A 40% deposit is required upon acceptance of this proposal to initiate scheduling.',
   madison:
-    '•Includes AHJ test report submission fee to upload test documentation to City of Madison.',
+    '•Includes AHJ test report submission fee for uploading test documentation to City of Madison.',
   facp:
-    '•Labor is not included for an inspector to actively monitor the fire alarm control panel (FACP) for the duration of the inspection. The FACP functions will be bypassed and offline while the system is being tested, and the owner is to provide the necessary staff to actively monitor the FACP if desired.',
+    '•Labor is not included for an inspector to actively monitor the fire alarm control panel (FACP) for the duration of the inspection. The FACP functions will be bypassed and offline while the system is being tested, and the owner is responsible for providing the necessary staff to actively monitor the FACP if desired.',
 } as const;
+
+export const EDWARDS_WARRANTY =
+  'Extended Parts Warranty Included: At no additional cost, eligible Edwards fire alarm components qualify for a manufacturer’s parts warranty of up to seven (7) years from the original materials ship date. Edwards offers this program as an incentive for customers to retain the certified Edwards dealer that installed their system for ongoing annual inspection and testing. To maintain this extended coverage, Customer must have Omni perform the required annual inspections and tests throughout the warranty period. Coverage is subject to Edwards’ approval and warranty terms. Warranty certificate is available upon request.';
+
+export const MERITER_PARAGRAPHS = {
+  inspectionHeading: 'Annual & Semi-Annual Inspections Description of Work:',
+  inspection:
+    '•Provide one annual inspection and test and one semi-annual inspection at each location listed within this proposal in accordance with the state and local codes.',
+  nfpaReport:
+    '•A complete NFPA test report will be provided upon completion. All devices will be bar coded and logged with the Building Reports system.',
+  detectorCleaning: '•Detector cleaning will be provided as necessary.',
+  normalHours:
+    '•Work shall be performed during normal business hours. Omni Technologies will schedule the dates of the inspection at least two weeks prior to the inspection.',
+  elevator:
+    '•Coordination and fees associated with the elevator company, if there are devices in the shaft to be tested, are the responsibility of the owner.',
+  monitoringHeading: 'Monitoring Description of Work:',
+  chart: '*INSERT CHART - SEE PREVIOUS MERITER PROPOSALS]*',
+} as const;
+
+const EACH_YEAR = ' each year for the duration of this contract';
+
+const NUMBER_WORDS = [
+  'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+];
 
 export type ConditionalClauseId = keyof typeof CONDITIONAL_CLAUSES;
 
@@ -50,26 +79,22 @@ export interface ClauseDecision {
   overridden: boolean;
 }
 
-export type BillingState = 'annual' | 'deposit' | 'both' | 'neither';
-
-export interface BillingEvaluation {
-  price: number | null;
-  /** True when the price is $10,000 and no choice/override resolves it. */
-  requiresChoiceAtThreshold: boolean;
-  /** True when a blank price or unresolved $10,000 leaves no billing clause. */
-  unresolved: boolean;
-  /** Both or neither selected deliberately — needs acknowledgement. */
-  contradiction: boolean;
-  state: BillingState;
-  annual: ClauseDecision;
-  deposit: ClauseDecision;
+export interface SowLocation {
+  locationName: string;
+  siteAddress: string;
 }
 
 export interface SowEvaluation {
+  template: SowTemplate;
+  inspectionScope: SowInspectionScope;
   durationYears: number;
   startYear: number;
   endYear: number;
   contractEndDate: string;
+  /** Meriter contract period: July 1 of the start year to June 30 after the final year. */
+  meriterContractDates: string;
+  /** Primary location first, then any additional locations, trimmed. */
+  locations: SowLocation[];
   inspectorCount: 1 | 2;
   autoInspectorCount: 1 | 2;
   singleInspector: ClauseDecision;
@@ -77,8 +102,9 @@ export interface SowEvaluation {
   madison: ClauseDecision;
   annualBilling: ClauseDecision;
   deposit: ClauseDecision;
-  billing: BillingEvaluation;
-  /** True when the site city/state automatically qualifies for the Madison fee. */
+  /** True when a blank price leaves the 40% deposit undecided. */
+  depositUnresolved: boolean;
+  /** True when any listed location's city/state automatically qualifies for the Madison fee. */
   madisonAuto: boolean;
   isMadison: boolean;
   isHospital: boolean;
@@ -114,6 +140,12 @@ export function contractEndDate(startYear: number, durationYears: number): strin
   return `12/31/${calculateEndYear(startYear, durationYears)}`;
 }
 
+/** Meriter contracts run July 1 – June 30, so a 3-year 2027 start ends June 30, 2030. */
+export function meriterContractDates(startYear: number, durationYears: number): string {
+  const start = safeYear(startYear);
+  return `July 1, ${start} – June 30, ${start + safeDuration(durationYears)}`;
+}
+
 function clause(
   auto: boolean,
   override: boolean | null,
@@ -125,40 +157,10 @@ function clause(
   };
 }
 
-function evaluateBilling(rules: SowRuleSelections, price: number | null): BillingEvaluation {
-  let autoAnnual = false;
-  let autoDeposit = false;
-  let requiresChoiceAtThreshold = false;
-
-  if (isValidPrice(price)) {
-    if (price === 10000) {
-      if (rules.billingChoiceAt10000 === 'annual') autoAnnual = true;
-      else if (rules.billingChoiceAt10000 === 'deposit') autoDeposit = true;
-      else requiresChoiceAtThreshold = true;
-    } else if (price < 10000) {
-      autoAnnual = true;
-    } else {
-      autoDeposit = true;
-    }
-  }
-
-  const annual = clause(autoAnnual, rules.annualBillingOverride);
-  const deposit = clause(autoDeposit, rules.depositOverride);
-
-  const both = annual.effective && deposit.effective;
-  const neither = !annual.effective && !deposit.effective;
-  // A blank price or an unresolved $10,000 price must never silently produce a
-  // "neither" document, even if the user switched both clauses off by hand.
-  const unresolved = neither && (price === null || requiresChoiceAtThreshold);
-
+function sowLocation(locationName: string, siteAddress: string): SowLocation {
   return {
-    price,
-    requiresChoiceAtThreshold,
-    unresolved,
-    contradiction: (both || neither) && !unresolved,
-    state: both ? 'both' : neither ? 'neither' : annual.effective ? 'annual' : 'deposit',
-    annual,
-    deposit,
+    locationName: locationName.trim(),
+    siteAddress: siteAddress.trim().replace(/\.+$/, ''),
   };
 }
 
@@ -169,50 +171,61 @@ export function evaluateSow(renewal: Renewal): SowEvaluation {
     labor.quotedHours,
     labor.inspectorOverride,
   );
-  const madisonAuto = isMadisonSite(company.siteCity, company.siteState);
+  const madisonAuto =
+    isMadisonSite(company.siteCity, company.siteState) ||
+    company.additionalLocations.some((location) => {
+      const parsed = parseAddressCity(location.siteAddress);
+      return parsed !== null && isMadisonSite(parsed.siteCity, parsed.siteState);
+    });
   const isMadison = sow.madisonOverride ?? madisonAuto;
-
-  const billing = evaluateBilling(sow, renewal.pricing.proposedAnnualPrice);
+  const price = renewal.pricing.proposedAnnualPrice;
+  const priceKnown = isValidPrice(price);
 
   return {
+    template: sow.template,
+    inspectionScope: sow.inspectionScope,
     durationYears: safeDuration(company.durationYears),
     startYear: safeYear(company.startYear),
     endYear: calculateEndYear(company.startYear, company.durationYears),
     contractEndDate: contractEndDate(company.startYear, company.durationYears),
+    meriterContractDates: meriterContractDates(company.startYear, company.durationYears),
+    locations: [
+      sowLocation(company.locationName, company.siteAddress),
+      ...company.additionalLocations.map((location) =>
+        sowLocation(location.locationName, location.siteAddress),
+      ),
+    ],
     inspectorCount,
     autoInspectorCount: autoCount,
     singleInspector: clause(inspectorCount === 1, sow.singleInspectorOverride),
-    // Rule D: FACP is included only when NOT a hospital AND one inspector.
+    // FACP is included only when NOT healthcare AND one inspector.
     facp: clause(!sow.isHospital && inspectorCount === 1, sow.facpOverride),
     madison: clause(madisonAuto, sow.madisonOverride),
-    annualBilling: billing.annual,
-    deposit: billing.deposit,
-    billing,
+    // The template keeps the billing line in every SOW; only an override removes it.
+    annualBilling: clause(true, sow.annualBillingOverride),
+    // Removed only when the annual contract value is under $10,000.
+    deposit: clause(priceKnown && price >= 10000, sow.depositOverride),
+    depositUnresolved: !priceKnown && sow.depositOverride === null,
     madisonAuto,
     isMadison,
     isHospital: sow.isHospital,
   };
 }
 
-function openingParagraph(renewal: Renewal, evaluation: SowEvaluation): string {
-  const location = renewal.company.locationName.trim() || '(INSERT LOCATION NAME)';
-  const address = renewal.company.siteAddress.trim() || '(INSERT FULL ADDRESS)';
-  return `Omni Technologies is pleased to present the following ${evaluation.durationYears}-year proposal for an Annual Fire Alarm System inspection and test at ${location} located at ${address}.`;
-}
-
 function noteLines(evaluation: SowEvaluation): string[] {
   const lines: string[] = [];
+  const eachYear = evaluation.durationYears > 1 ? EACH_YEAR : '';
 
   if (evaluation.singleInspector.effective) {
     lines.push(CONDITIONAL_CLAUSES.singleInspector);
   }
   lines.push(CORE_PARAGRAPHS.ownerNotification);
   lines.push(CORE_PARAGRAPHS.normalHours);
+  lines.push(CORE_PARAGRAPHS.lift);
   lines.push(CORE_PARAGRAPHS.customerDelay);
   lines.push(CORE_PARAGRAPHS.elevator);
-  lines.push(CORE_PARAGRAPHS.lift);
   if (evaluation.annualBilling.effective) {
-    lines.push(CONDITIONAL_CLAUSES.annualBilling);
+    lines.push(`•The amount listed will be billed after completion of the inspection(s)${eachYear}.`);
   }
   if (evaluation.deposit.effective) {
     lines.push(CONDITIONAL_CLAUSES.deposit);
@@ -227,6 +240,68 @@ function noteLines(evaluation: SowEvaluation): string[] {
   return lines;
 }
 
+function standardSow(renewal: Renewal, evaluation: SowEvaluation): string[] {
+  const company = renewal.company.companyName.trim() || '(INSERT COMPANY NAME)';
+  const semiAnnual =
+    evaluation.inspectionScope === 'Annual and Semi-Annual' ? ' and one semi-annual inspection' : '';
+  const eachYear = evaluation.durationYears > 1 ? EACH_YEAR : '';
+
+  return [
+    `Omni Technologies is pleased to present the following ${evaluation.durationYears}-Year proposal for ${evaluation.inspectionScope} Fire Alarm System Inspections and Testing for ${company}.`,
+    '',
+    ...(evaluation.template === 'standard-warranty' ? [EDWARDS_WARRANTY, ''] : []),
+    'Location(s) Included:',
+    ...evaluation.locations.map(
+      (location) =>
+        `•${location.locationName || '(INSERT LOCATION NAME)'} – located at ${location.siteAddress || '(INSERT FULL ADDRESS)'}.`,
+    ),
+    '',
+    'Description of Work:',
+    `•Provide one annual inspection${semiAnnual} in accordance with applicable state and local codes${eachYear}.`,
+    CORE_PARAGRAPHS.nfpaReport,
+    CORE_PARAGRAPHS.detectorCleaning,
+    '',
+    'Notes:',
+    ...noteLines(evaluation),
+    '',
+    `Contract End Date: ${evaluation.contractEndDate}`,
+  ];
+}
+
+/** "Meriter" is added in front of the location name unless the name already contains it. */
+export function meriterLocationName(locationName: string): string {
+  const name = locationName.trim() || '(INSERT LOCATION NAME)';
+  return /\bmeriter\b/i.test(name) ? name : `Meriter ${name}`;
+}
+
+function meriterSow(evaluation: SowEvaluation): string[] {
+  const [location] = evaluation.locations;
+  const name = meriterLocationName(location.locationName);
+  const years = evaluation.durationYears;
+
+  return [
+    `Omni Technologies is pleased to present the following ${NUMBER_WORDS[years] ?? years}-year proposal for the Annual & Semi-Annual Fire Alarm System Inspection and Tests, and Monitoring for the ${name} located at ${location.siteAddress || '(INSERT FULL ADDRESS)'}.`,
+    '',
+    MERITER_PARAGRAPHS.inspectionHeading,
+    '',
+    MERITER_PARAGRAPHS.inspection,
+    MERITER_PARAGRAPHS.nfpaReport,
+    MERITER_PARAGRAPHS.detectorCleaning,
+    '',
+    'Notes:',
+    MERITER_PARAGRAPHS.normalHours,
+    MERITER_PARAGRAPHS.elevator,
+    '',
+    MERITER_PARAGRAPHS.monitoringHeading,
+    '',
+    `•Provide ${years} year${years === 1 ? '' : 's'} of 24/7/365 off-site monitoring for the fire alarm system at the ${name}, as listed within the proposal.`,
+    '',
+    `Contract Dates: ${evaluation.meriterContractDates}`,
+    '',
+    MERITER_PARAGRAPHS.chart,
+  ];
+}
+
 /**
  * Produces the exact plain-text SOW for D-Tools. Bullets are real `•`
  * characters, paragraphs are separated by a single blank line, and no
@@ -236,19 +311,11 @@ export function generateSow(
   renewal: Renewal,
   evaluation: SowEvaluation = evaluateSow(renewal),
 ): string {
-  return [
-    openingParagraph(renewal, evaluation),
-    '',
-    'Description of Work:',
-    CORE_PARAGRAPHS.annualInspection,
-    CORE_PARAGRAPHS.nfpaReport,
-    CORE_PARAGRAPHS.detectorCleaning,
-    '',
-    'Notes:',
-    ...noteLines(evaluation),
-    '',
-    `Contract End Date: ${evaluation.contractEndDate}`,
-  ].join('\n');
+  return (
+    evaluation.template === 'meriter'
+      ? meriterSow(evaluation)
+      : standardSow(renewal, evaluation)
+  ).join('\n');
 }
 
 export interface SowIssue {
@@ -261,9 +328,18 @@ export interface SowIssue {
  * Blocks only on things that would make the copied document wrong or
  * contractually unresolved. Everything else is a visible warning.
  */
-export function validateSow(renewal: Renewal, evaluation: SowEvaluation): SowIssue[] {  const issues: SowIssue[] = [];
-  const { company, labor, pricing, sow } = renewal;
+export function validateSow(renewal: Renewal, evaluation: SowEvaluation): SowIssue[] {
+  const issues: SowIssue[] = [];
+  const { company, labor, pricing } = renewal;
+  const meriter = evaluation.template === 'meriter';
 
+  if (!meriter && !company.companyName.trim()) {
+    issues.push({
+      id: 'company-name',
+      severity: 'error',
+      message: 'Enter the company name — the SOW opening names the company.',
+    });
+  }
   if (!company.locationName.trim()) {
     issues.push({
       id: 'location',
@@ -276,6 +352,17 @@ export function validateSow(renewal: Renewal, evaluation: SowEvaluation): SowIss
       id: 'address',
       severity: 'error',
       message: 'Enter the full site address.',
+    });
+  }
+  if (!meriter) {
+    company.additionalLocations.forEach((location, index) => {
+      if (!location.locationName.trim() || !location.siteAddress.trim()) {
+        issues.push({
+          id: `additional-location-${location.id}`,
+          severity: 'error',
+          message: `Additional location ${index + 2} needs both a location name and a full address, or remove it.`,
+        });
+      }
     });
   }
   if (!Number.isInteger(company.startYear) || company.startYear < 1900 || company.startYear > 2200) {
@@ -300,42 +387,27 @@ export function validateSow(renewal: Renewal, evaluation: SowEvaluation): SowIss
     });
   }
 
-  if (evaluation.billing.unresolved) {
+  if (!meriter && evaluation.depositUnresolved) {
     issues.push({
-      id: 'billing-unresolved',
+      id: 'deposit-unresolved',
       severity: 'error',
       message:
-        pricing.proposedAnnualPrice === null
-          ? 'Proposed annual price is blank. Choose the billing treatment before copying.'
-          : 'Proposed annual price is exactly $10,000. Choose annual billing or the 40% deposit.',
-    });
-  } else if (evaluation.billing.contradiction && !sow.billingExceptionAcknowledged) {
-    issues.push({
-      id: 'billing-contradiction',
-      severity: 'error',
-      message:
-        evaluation.billing.state === 'both'
-          ? 'Both annual billing and the 40% deposit are included. Acknowledge this exception before copying.'
-          : 'Neither annual billing nor the 40% deposit is included. Acknowledge this exception before copying.',
+        'Proposed annual price is blank — the 40% deposit depends on it. Enter the price or set the deposit clause manually.',
     });
   }
 
-  if (evaluation.billing.contradiction && sow.billingExceptionAcknowledged) {
+  if (meriter && company.additionalLocations.length > 0) {
     issues.push({
-      id: 'billing-exception',
+      id: 'meriter-locations',
       severity: 'warning',
-      message:
-        evaluation.billing.state === 'both'
-          ? 'Exceptional contract: both billing clauses are included.'
-          : 'Exceptional contract: neither billing clause is included.',
+      message: 'The Meriter template covers one location — additional locations are not included in this SOW.',
     });
   }
-
-  if (evaluation.billing.requiresChoiceAtThreshold && !evaluation.billing.unresolved) {
+  if (meriter) {
     issues.push({
-      id: 'threshold-review',
+      id: 'meriter-chart',
       severity: 'warning',
-      message: 'Price is exactly $10,000 — the billing language was manually resolved. Confirm with Julie.',
+      message: 'The Meriter SOW ends with the INSERT CHART placeholder — add the chart from a previous Meriter proposal in D-Tools.',
     });
   }
 
@@ -373,8 +445,9 @@ export function validateSow(renewal: Renewal, evaluation: SowEvaluation): SowIss
   }
 
   if (
+    !meriter &&
     company.siteCity.trim().toLowerCase() === 'madison' &&
-    !evaluation.madisonAuto
+    !isMadisonSite(company.siteCity, company.siteState)
   ) {
     issues.push({
       id: 'madison-state',
@@ -383,7 +456,7 @@ export function validateSow(renewal: Renewal, evaluation: SowEvaluation): SowIss
     });
   }
 
-  if (!company.siteCity.trim() || !company.siteState.trim()) {
+  if (!meriter && (!company.siteCity.trim() || !company.siteState.trim())) {
     issues.push({
       id: 'site-city-state',
       severity: 'warning',

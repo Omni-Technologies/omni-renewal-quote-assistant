@@ -1,6 +1,7 @@
-import { Building2 } from 'lucide-react';
-import type { InspectionFrequency, Renewal } from '../types';
+import { Building2, Plus, X } from 'lucide-react';
+import type { AdditionalLocation, InspectionFrequency, Renewal } from '../types';
 import { INSPECTION_FREQUENCIES } from '../types';
+import { createId } from '../lib/model';
 import { parseAddressCity } from '../lib/renewalInputs';
 import {
   Field,
@@ -23,6 +24,20 @@ export function CompanySection({
       ...current,
       company: { ...current.company, ...values },
     }));
+  const setAdditionalLocations = (
+    change: (locations: AdditionalLocation[]) => AdditionalLocation[],
+  ) =>
+    update((current) => ({
+      ...current,
+      company: {
+        ...current.company,
+        additionalLocations: change(current.company.additionalLocations),
+      },
+    }));
+  const patchAdditionalLocation = (id: string, values: Partial<AdditionalLocation>) =>
+    setAdditionalLocations((locations) =>
+      locations.map((location) => (location.id === id ? { ...location, ...values } : location)),
+    );
 
   return (
     <SectionCard
@@ -33,7 +48,8 @@ export function CompanySection({
       <div className="workspace-field-grid grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <Field
           label="Company name"
-          hint="Teams company name; used in the D-Tools project name."
+          required
+          hint="Teams company name; used in the D-Tools project name and the SOW opening."
         >
           <TextInput
             value={company.companyName}
@@ -102,7 +118,7 @@ export function CompanySection({
             maxLength={24}
           />
         </Field>
-        <Field label="Inspection frequency" hint="For D-Tools. SOW keeps the standard annual inspection language.">
+        <Field label="Inspection frequency" hint="For the D-Tools project name and email. The SOW uses its own Inspections included choice.">
           <select
             className="input"
             value={company.inspectionFrequency}
@@ -145,6 +161,66 @@ export function CompanySection({
           />
         </Field>
         <div className="hidden xl:block" />
+      </div>
+
+      <div className="mt-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="label">Additional locations</span>
+          <button
+            type="button"
+            className="btn-secondary btn-xs"
+            onClick={() =>
+              setAdditionalLocations((locations) => [
+                ...locations,
+                { id: createId(), locationName: '', siteAddress: '' },
+              ])
+            }
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add location
+          </button>
+        </div>
+        <p className="hint mt-0.5">
+          Multi-location proposals: listed under Location(s) Included in the SOW after the location above.
+        </p>
+        {company.additionalLocations.length > 0 ? (
+          <div className="mt-2 space-y-2">
+            {company.additionalLocations.map((location, index) => (
+              <div
+                key={location.id}
+                className="flex items-start gap-1.5 rounded-lg border border-slate-200 bg-slate-50/60 p-2 dark:border-slate-800 dark:bg-slate-950/40"
+              >
+                <div className="grid min-w-0 flex-1 grid-cols-1 gap-1.5">
+                  <TextInput
+                    value={location.locationName}
+                    onChange={(value) => patchAdditionalLocation(location.id, { locationName: value })}
+                    placeholder="Location name"
+                    ariaLabel={`Additional location ${index + 2} name`}
+                  />
+                  <TextInput
+                    value={location.siteAddress}
+                    onChange={(value) => patchAdditionalLocation(location.id, { siteAddress: value })}
+                    placeholder="Full address with city, state and ZIP"
+                    ariaLabel={`Additional location ${index + 2} full address`}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="btn-ghost h-8 w-8 shrink-0 p-0"
+                  onClick={() =>
+                    setAdditionalLocations((locations) =>
+                      locations.filter((entry) => entry.id !== location.id),
+                    )
+                  }
+                  title="Remove this location"
+                  aria-label={`Remove additional location ${index + 2}`}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className="workspace-stack-grid mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">

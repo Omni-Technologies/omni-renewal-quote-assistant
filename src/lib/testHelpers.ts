@@ -28,6 +28,7 @@ export function makeRenewal(overrides: RenewalOverrides = {}): Renewal {
     status: overrides.status ?? base.status,
     company: {
       ...base.company,
+      companyName: 'Maple Grove Property Management',
       locationName: 'Maple Grove Apartments',
       siteAddress: '1234 Maple Grove Rd',
       siteCity: 'Sun Prairie',

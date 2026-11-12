@@ -54,6 +54,10 @@ make targeted changes rather than rebuilding it.
   renewal it preserves address, pricing, notes, quoted hours and other settings.
 - Preserve exact supplied SOW wording and manual drafts. Changed generated
   inputs require manual-draft review; never overwrite a manual draft silently.
+- SOW has three templates (2026-11-12): Standard, Standard + Edwards warranty,
+  Meriter. SOW Inspections included is separate from Inspection frequency.
+  Billing-after-completion line is always included; 40% deposit at price
+  >= 10,000. Do not restore the old either/or billing or the $10k choice.
 
 ## Source map
 

@@ -1,5 +1,5 @@
 import type {
-  BillingChoice,
+  AdditionalLocation,
   CompanyLocation,
   DtoolsProjectEntry,
   HistoricalHoursEntry,
@@ -9,9 +9,16 @@ import type {
   PricingDetails,
   Renewal,
   RenewalStatus,
+  SowInspectionScope,
   SowRuleSelections,
+  SowTemplate,
 } from '../types';
-import { INSPECTION_FREQUENCIES, RENEWAL_STATUSES } from '../types';
+import {
+  INSPECTION_FREQUENCIES,
+  RENEWAL_STATUSES,
+  SOW_INSPECTION_SCOPES,
+  SOW_TEMPLATES,
+} from '../types';
 import { resetChecklist } from './workflow';
 import { normalizeText, parseDurationHours, parseWorkDate } from './dtools';
 import { updateRenewalLabor } from './renewalInputs';
@@ -45,6 +52,7 @@ export function createRenewal(now = Date.now()): Renewal {
       siteAddress: '',
       siteCity: '',
       siteState: 'WI',
+      additionalLocations: [],
       inspectionFrequency: 'Annual',
       emailSystemType: 'Fire Alarm',
       emailGreeting: 'Good Day',
@@ -73,14 +81,14 @@ export function createRenewal(now = Date.now()): Renewal {
       importSummary: null,
     },
     sow: {
+      template: 'standard',
+      inspectionScope: 'Annual',
       isHospital: false,
       madisonOverride: null,
       singleInspectorOverride: null,
       facpOverride: null,
       annualBillingOverride: null,
       depositOverride: null,
-      billingChoiceAt10000: null,
-      billingExceptionAcknowledged: false,
     },
     sowDraft: null,
     checklist: resetChecklist(),
@@ -125,14 +133,14 @@ export function cloneForNextContract(source: Renewal, now = Date.now()): Renewal
       importSummary: null,
     },
     sow: {
+      template: source.sow.template,
+      inspectionScope: source.sow.inspectionScope,
       isHospital: source.sow.isHospital,
       madisonOverride: null,
       singleInspectorOverride: null,
       facpOverride: null,
       annualBillingOverride: null,
       depositOverride: null,
-      billingChoiceAt10000: null,
-      billingExceptionAcknowledged: false,
     },
   };
 }
@@ -187,6 +195,21 @@ function asFrequency(value: unknown): CompanyLocation['inspectionFrequency'] {
     : 'Annual';
 }
 
+function normalizeAdditionalLocations(raw: unknown): AdditionalLocation[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  return raw.filter(isRecord).map((location) => {
+    const stored = asString(location.id).trim();
+    const id = stored && !seen.has(stored) ? stored : createId();
+    seen.add(id);
+    return {
+      id,
+      locationName: asString(location.locationName),
+      siteAddress: asString(location.siteAddress),
+    };
+  });
+}
+
 function normalizeCompany(raw: unknown): CompanyLocation {
   const value = isRecord(raw) ? raw : {};
   return {
@@ -196,6 +219,7 @@ function normalizeCompany(raw: unknown): CompanyLocation {
     siteAddress: asString(value.siteAddress),
     siteCity: asString(value.siteCity),
     siteState: asString(value.siteState, 'WI'),
+    additionalLocations: normalizeAdditionalLocations(value.additionalLocations),
     inspectionFrequency: asFrequency(value.inspectionFrequency),
     emailSystemType: value.emailSystemType === 'Intrusion' || value.emailSystemType === 'Nurse Call' ? value.emailSystemType : 'Fire Alarm',
     emailGreeting: value.emailGreeting === 'Good morning' || value.emailGreeting === 'Good afternoon' ? value.emailGreeting : 'Good Day',
@@ -316,21 +340,19 @@ function normalizeLabor(raw: unknown): LaborPlan {
 
 function normalizeSow(raw: unknown): SowRuleSelections {
   const value = isRecord(raw) ? raw : {};
-  const choice = value.billingChoiceAt10000;
   return {
+    template: SOW_TEMPLATES.includes(value.template as SowTemplate)
+      ? (value.template as SowTemplate)
+      : 'standard',
+    inspectionScope: SOW_INSPECTION_SCOPES.includes(value.inspectionScope as SowInspectionScope)
+      ? (value.inspectionScope as SowInspectionScope)
+      : 'Annual',
     isHospital: asBoolean(value.isHospital),
     madisonOverride: asBooleanOrNull(value.madisonOverride),
     singleInspectorOverride: asBooleanOrNull(value.singleInspectorOverride),
     facpOverride: asBooleanOrNull(value.facpOverride),
     annualBillingOverride: asBooleanOrNull(value.annualBillingOverride),
     depositOverride: asBooleanOrNull(value.depositOverride),
-    billingChoiceAt10000:
-      choice === 'annual' || choice === 'deposit'
-        ? (choice as BillingChoice)
-        : null,
-    billingExceptionAcknowledged: asBoolean(
-      value.billingExceptionAcknowledged,
-    ),
   };
 }
 
@@ -467,6 +489,14 @@ export function validateBackupRenewal(raw: unknown): BackupRenewalValidation {
       return backupFailure(`record has an invalid company.${field}`);
     }
   }
+  if (company.additionalLocations !== undefined && (
+    !Array.isArray(company.additionalLocations) ||
+    company.additionalLocations.some((location) =>
+      !isRecord(location) || typeof location.id !== 'string' || !location.id.trim() ||
+      typeof location.locationName !== 'string' || typeof location.siteAddress !== 'string')
+  )) {
+    return backupFailure('record has an invalid additional location');
+  }
   if (
     !INSPECTION_FREQUENCIES.includes(company.inspectionFrequency as CompanyLocation['inspectionFrequency']) ||
     asNumber(company.startYear) === null || asNumber(company.durationYears) === null
@@ -550,10 +580,15 @@ export function validateBackupRenewal(raw: unknown): BackupRenewalValidation {
   }
 
   const sow = raw.sow as UnknownRecord;
-  for (const field of ['isHospital', 'billingExceptionAcknowledged']) {
-    if (typeof sow[field] !== 'boolean') {
-      return backupFailure(`record has an invalid sow.${field}`);
-    }
+  if (typeof sow.isHospital !== 'boolean') {
+    return backupFailure('record has an invalid sow.isHospital');
+  }
+  if (sow.template !== undefined && !SOW_TEMPLATES.includes(sow.template as SowTemplate)) {
+    return backupFailure('record has an invalid SOW template');
+  }
+  if (sow.inspectionScope !== undefined &&
+    !SOW_INSPECTION_SCOPES.includes(sow.inspectionScope as SowInspectionScope)) {
+    return backupFailure('record has an invalid SOW inspection scope');
   }
   for (const field of [
     'madisonOverride', 'singleInspectorOverride', 'facpOverride',
@@ -562,12 +597,6 @@ export function validateBackupRenewal(raw: unknown): BackupRenewalValidation {
     if (sow[field] !== null && typeof sow[field] !== 'boolean') {
       return backupFailure(`record has an invalid sow.${field}`);
     }
-  }
-  if (
-    sow.billingChoiceAt10000 !== null &&
-    sow.billingChoiceAt10000 !== 'annual' && sow.billingChoiceAt10000 !== 'deposit'
-  ) {
-    return backupFailure('record has an invalid billing choice');
   }
 
   for (const field of ['createdAt', 'updatedAt'] as const) {

@@ -1,6 +1,56 @@
 # STATUS — OMNI Renewal Quote Assistant
 
-## Current operating handoff — 2026-10-23
+## Current operating handoff — 2026-11-12
+
+### Three SOW templates — 2026-11-12 (uncommitted; awaiting commit/push/deploy go)
+
+- User supplied three new SOW templates replacing the old single template:
+  Standard (1–3 yr, single/multi-location, annual or annual+semi-annual,
+  healthcare/non-healthcare), Standard + Edwards extended parts warranty, and
+  Meriter. Wording is byte-for-byte in `src/lib/sow.ts` (curly ’ in the
+  warranty paragraph, en dashes in location bullets and Meriter dates).
+- User decisions: SOW **Inspections included** dropdown is separate from
+  `company.inspectionFrequency` (project name/email unchanged). New billing
+  rule: billing-after-completion line always included; 40% deposit at
+  price >= $10,000 (exactly $10,000 included); blank price blocks copy unless
+  deposit is set manually. Old $10k choice and both/neither acknowledgement
+  removed. Hospital toggle relabeled "Healthcare / hospital location?" (same
+  `sow.isHospital`). Meriter keeps the literal
+  `*INSERT CHART - SEE PREVIOUS MERITER PROPOSALS]*` line in copied text; a
+  chart builder may be requested later.
+- Interpretations (not user-confirmed, flagged in reply): Standard opening uses
+  Company name (required, blocking); "N-Year"; "each year for the duration of
+  this contract" only when duration > 1; Meriter prefixes "Meriter " unless the
+  name already contains the word; Meriter July 1 start – June 30 of
+  start+duration; joined the "Building / Reports" wrap in the Meriter text.
+- Data: `sow.template`, `sow.inspectionScope`, `company.additionalLocations`
+  ({id, locationName, siteAddress}). Older records/backups default to
+  standard/Annual/[]; retired `billingChoiceAt10000` and
+  `billingExceptionAcknowledged` are dropped on load and no longer validated.
+  Duplicate keeps template, scope and additional locations. Madison auto is
+  true if the primary city/state or any additional address parses to Madison, WI.
+- Changed: `src/types.ts`, `src/lib/sow.ts`, `src/lib/model.ts`,
+  `src/components/SowRulesSection.tsx`, `CompanySection.tsx`, `SowPreview.tsx`,
+  tests `sow.test.ts`, `db.test.ts`, `testHelpers.ts` (companyName default),
+  `scripts/browser_audit.mjs` (new wording), new `scripts/sow_templates_check.mjs`.
+- Checks: typecheck, lint, 231 tests, build, build:cloud exit 0. Browser
+  (PLAYWRIGHT_MODULE/CHROMIUM_PATH below, Vite on 5173): `sow_templates_check`,
+  layout_check, renewal_handoff_check, pricing_copy_check,
+  inline_history_check, unified_history_check, jobcost_check,
+  restore_merge_check all pass. `browser_audit.mjs` fails at line 114
+  ("Selection changes average": first "in the average" checkbox not checked);
+  it fails identically with these src changes stashed, so it is pre-existing
+  and unrelated. Its SOW-step assertions were checked against the copied text.
+- Existing manual SOW drafts will show "Generated inputs changed" review
+  because the generated wording changed; that is the intended safeguard.
+- Independent review (harness-reviewer): no high/medium defects; all load
+  paths go through normalizeRenewal; no remaining references to retired
+  fields. Low finding fixed: duplicate/blank additional-location ids are
+  replaced on load (`normalizeAdditionalLocations`, test in db.test.ts).
+  After the fix: typecheck, lint, 231 tests, both builds, sow_templates_check,
+  restore_merge_check, renewal_handoff_check pass. Dev server stopped.
+- Next: ask once to commit/push and deploy (`npm run deploy:cloud`; no D1
+  migration needed — renewals are JSON blobs).
 
 ### Beehive Homes of Oregon is one site — 2026-10-23 (8c99eed pushed, deployed as ce1a6d84)
 

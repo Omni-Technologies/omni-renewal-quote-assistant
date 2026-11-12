@@ -18,6 +18,7 @@ import {
   generateSow,
   manualDraftNeedsReview,
   resolveSowText,
+  SOW_TEMPLATE_LABELS,
   validateSow,
   validateSowText,
 } from '../lib/sow';
@@ -158,7 +159,7 @@ export function SowPreview({
                 Scope of Work
               </h2>
               <span className="chip bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                Plain text
+                {SOW_TEMPLATE_LABELS[evaluation.template]}
               </span>
               {manual ? (
                 <span className="chip bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
