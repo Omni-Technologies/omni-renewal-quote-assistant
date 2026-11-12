@@ -2,7 +2,7 @@
 
 ## Current operating handoff — 2026-11-12
 
-### Three SOW templates — 2026-11-12 (207a98c pushed; GitHub Pages deployed; cloud NOT deployed)
+### Three SOW templates — 2026-11-12 (207a98c pushed; Pages deployed; cloud deployed as aa82ca08)
 
 - User supplied three new SOW templates replacing the old single template:
   Standard (1–3 yr, single/multi-location, annual or annual+semi-annual,
@@ -49,10 +49,12 @@
   replaced on load (`normalizeAdditionalLocations`, test in db.test.ts).
   After the fix: typecheck, lint, 231 tests, both builds, sow_templates_check,
   restore_merge_check, renewal_handoff_check pass. Dev server stopped.
-- User approved commit and push only. Pages workflow run 43308691801
-  succeeded. quotes.drewcassidy.dev still runs the old SOW until
-  `npm run deploy:cloud` (no D1 migration needed — renewals are JSON blobs);
-  ask before deploying.
+- Pages workflow run 43308691801 succeeded. User then approved the cloud
+  deploy: `npm run deploy:cloud` exit 0, "No migrations to apply", Worker
+  version aa82ca08-549d-42ad-aa6d-5169bf9af7f4. Locked check
+  (`API_URL=https://quotes.drewcassidy.dev EXPECT_LOCKED=1 node
+  scripts/cloud_api_check.mjs`) passed. The SOW UI behind Cloudflare Access
+  was not exercised by automation; the user's first live renewal is the check.
 
 ### Beehive Homes of Oregon is one site — 2026-10-23 (8c99eed pushed, deployed as ce1a6d84)
 
