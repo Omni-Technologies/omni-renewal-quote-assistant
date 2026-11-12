@@ -2,7 +2,7 @@
 
 ## Current operating handoff — 2026-11-12
 
-### Three SOW templates — 2026-11-12 (uncommitted; awaiting commit/push/deploy go)
+### Three SOW templates — 2026-11-12 (207a98c pushed; GitHub Pages deployed; cloud NOT deployed)
 
 - User supplied three new SOW templates replacing the old single template:
   Standard (1–3 yr, single/multi-location, annual or annual+semi-annual,
@@ -49,8 +49,10 @@
   replaced on load (`normalizeAdditionalLocations`, test in db.test.ts).
   After the fix: typecheck, lint, 231 tests, both builds, sow_templates_check,
   restore_merge_check, renewal_handoff_check pass. Dev server stopped.
-- Next: ask once to commit/push and deploy (`npm run deploy:cloud`; no D1
-  migration needed — renewals are JSON blobs).
+- User approved commit and push only. Pages workflow run 43308691801
+  succeeded. quotes.drewcassidy.dev still runs the old SOW until
+  `npm run deploy:cloud` (no D1 migration needed — renewals are JSON blobs);
+  ask before deploying.
 
 ### Beehive Homes of Oregon is one site — 2026-10-23 (8c99eed pushed, deployed as ce1a6d84)
 
